@@ -2,64 +2,57 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>DDG Tracking Web</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 <div id="app">
-  <div id="loginView" class="login-shell">
+  <section id="loginView" class="login-shell">
     <div class="login-card">
-      <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>DDG Tracking</h1><p>Web Management Portal</p></div></div>
-      <label>Email</label>
-      <input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com" />
-      <label>Password</label>
-      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" />
-      <button id="loginBtn" class="primary full">Login</button>
-      <div id="loginMsg" class="msg"></div>
+      <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
+      <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
+      <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div>
     </div>
-  </div>
+  </section>
 
-  <div id="mainView" class="shell hidden">
+  <div id="mainView" class="app-shell hidden">
+    <header class="titlebar"><div class="title-brand"><span class="mini-logo">DDG</span><b>Tracking</b></div><div class="web-badge">WEB</div></header>
     <aside class="sidebar">
-      <div class="brand"><div class="brand-badge">DDG</div><span>Tracking Web</span></div>
       <nav id="nav">
-        <button data-page="dashboard" class="nav-btn active">Dashboard</button>
-        <button data-page="projects" class="nav-btn">Projects</button>
-        <button data-page="tasks" class="nav-btn">Tasks</button>
-        <button data-page="changeorders" class="nav-btn">Change Orders</button>
-        <button data-page="attendance" class="nav-btn">Attendance</button>
-        <button data-page="monitor" id="monitorNav" class="nav-btn hidden">Team Monitor</button>
-        <button data-page="employees" id="employeesNav" class="nav-btn hidden">Employees</button>
+        <button data-page="dashboard" class="nav-btn active"><span>⌂</span>Dashboard</button>
+        <button data-page="jobs" class="nav-btn"><span>▣</span>Jobs</button>
+        <button data-page="tasks" class="nav-btn"><span>☷</span>Tasks</button>
+        <button data-page="production" class="nav-btn"><span>▥</span>Production</button>
+        <button data-page="screenshots" class="nav-btn"><span>▧</span>Screenshots</button>
+        <button data-page="attendance" class="nav-btn"><span>▦</span>Attendance</button>
+        <button data-page="monitor" id="monitorNav" class="nav-btn hidden"><span>▱</span>Monitor</button>
+        <button data-page="employees" id="employeesNav" class="nav-btn hidden"><span>♙</span>Employees</button>
       </nav>
       <div class="sidebar-bottom">
-        <div id="userSummary"></div>
+        <button data-page="settings" class="nav-btn"><span>⚙</span>Settings</button>
+        <button data-page="about" class="nav-btn"><span>?</span>About</button>
+        <div id="userSummary" class="user-summary"></div>
         <button id="logoutBtn" class="nav-btn danger-text">Logout</button>
       </div>
     </aside>
-
     <main class="main">
-      <header class="topbar">
-        <div>
-          <h2 id="pageTitle">Dashboard</h2>
-          <p id="pageSubtitle">Project portfolio overview</p>
-        </div>
-        <div class="top-actions"><span id="syncStatus" class="pill">Ready</span><button id="reloadBtn">Reload</button></div>
-      </header>
-
+      <div class="content-head"><div><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Project portfolio overview</p></div><div class="head-actions"><span id="syncStatus" class="pill">Ready</span><button id="reloadBtn" class="primary">Reload</button></div></div>
       <section id="page-dashboard" class="page"></section>
-      <section id="page-projects" class="page hidden"></section>
+      <section id="page-jobs" class="page hidden"></section>
       <section id="page-tasks" class="page hidden"></section>
-      <section id="page-changeorders" class="page hidden"></section>
+      <section id="page-production" class="page hidden"></section>
+      <section id="page-screenshots" class="page hidden"></section>
       <section id="page-attendance" class="page hidden"></section>
       <section id="page-monitor" class="page hidden"></section>
       <section id="page-employees" class="page hidden"></section>
+      <section id="page-settings" class="page hidden"></section>
+      <section id="page-about" class="page hidden"></section>
     </main>
   </div>
 </div>
-
 <div id="modalBackdrop" class="modal-backdrop hidden"><div id="modal" class="modal"></div></div>
-
 <script type="module" src="app.js"></script>
 </body>
 </html>
