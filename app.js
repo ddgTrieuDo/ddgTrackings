@@ -1,8 +1,10 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
 const SUPABASE_URL='https://qxigevxcqkdsapxosvhh.supabase.co';
 const SUPABASE_KEY='sb_publishable_G_lto6J9yokrmYH8ib7trQ_KP1Lajbn';
-const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const createClient = window.supabase?.createClient;
+if (!createClient) {
+  throw new Error('Supabase library failed to load. Check your internet connection or CDN access.');
+}
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'ddg-tracking-web-auth'}});
 
 const state={profile:null,page:'dashboard',jobsTab:'setup',tasksTab:'mine',attendanceTab:'live',projects:[],tasks:[],profiles:[],members:[],assignees:[],timeEntries:[],phaseBudgets:[],changeOrders:[],devices:[],leaveRequests:[],shifts:[],specialDays:[],screenshots:[]};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -28,7 +30,24 @@ function modal(title,html,onSave,saveText='Save'){ $('#modal').innerHTML=`<h3>${
 
 async function getProfile(user){const {data}=await supabase.from('profiles').select('*').eq('id',user.id).maybeSingle();return data||{id:user.id,email:user.email,display_name:user.email,role:'Employee'}}
 async function showMain(user){state.profile=await getProfile(user);$('#loginView').classList.add('hidden');$('#mainView').classList.remove('hidden');$('#monitorNav').classList.toggle('hidden',!roleIsManager());$('#employeesNav').classList.toggle('hidden',!roleIsAdmin());$('#userSummary').innerHTML=`<b>${esc(state.profile.display_name||state.profile.email)}</b><br>${esc(state.profile.employee_id||'')} · ${esc(state.profile.role||'Employee')}`;await loadAll()}
-$('#loginBtn').onclick=async()=>{const {data,error}=await supabase.auth.signInWithPassword({email:$('#loginEmail').value.trim(),password:$('#loginPassword').value});$('#loginMsg').textContent=error?.message||'';if(data?.user)showMain(data.user)};
+$('#loginBtn').onclick=async()=>{
+  const btn=$('#loginBtn'), msg=$('#loginMsg');
+  const email=$('#loginEmail').value.trim();
+  const password=$('#loginPassword').value;
+  msg.textContent='';
+  if(!email||!password){msg.textContent='Please enter email and password.';return;}
+  btn.disabled=true; btn.textContent='Signing in...';
+  try{
+    const {data,error}=await supabase.auth.signInWithPassword({email,password});
+    if(error){msg.textContent=error.message||'Login failed.';return;}
+    if(!data?.user){msg.textContent='Login succeeded but no user session was returned.';return;}
+    await showMain(data.user);
+  }catch(e){
+    console.error('Login error',e);
+    msg.textContent=e?.message||'Unable to connect to Supabase.';
+  }finally{btn.disabled=false;btn.textContent='Login';}
+};
+$('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginBtn').click()});
 $('#logoutBtn').onclick=async()=>{await supabase.auth.signOut();location.reload()};$('#reloadBtn').onclick=loadAll;
 $$('.nav-btn[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;$$('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.add('hidden'));$(`#page-${state.page}`).classList.remove('hidden');render()});
 
@@ -94,11 +113,90 @@ async function drawShotCards(shots,el){el.innerHTML=shots.length?'<div class="mu
 
 function renderAttendance(){const el=$('#page-attendance');el.innerHTML=tabs([['live','Live Team'],['leave','Leave Requests'],['schedule','Work Schedule & Holidays'],['balance','Leave Balances']],state.attendanceTab)+`<div id="attendanceBody"></div>`;hookTabs(el,v=>state.attendanceTab=v);({live:drawLiveTeam,leave:drawLeave,schedule:drawSchedule,balance:drawBalances}[state.attendanceTab]||drawLiveTeam)()}
 function drawLiveTeam(){const now=Date.now(),today=new Date();const approved=state.leaveRequests.filter(l=>String(l.status).toLowerCase()==='approved'&&new Date(l.start_date)<=today&&new Date(l.end_date)>=today);$('#attendanceBody').innerHTML=`<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Employee ID</th><th>Role</th><th>Status</th><th>Project</th><th>Task</th><th>Device</th><th>Last Seen</th></tr></thead><tbody>${state.profiles.filter(p=>p.active!==false).map(p=>{const d=state.devices.filter(x=>x.user_id===p.id).sort((a,b)=>new Date(b.last_seen||0)-new Date(a.last_seen||0))[0],onLeave=approved.some(l=>l.user_id===p.id),recent=d&&now-new Date(d.last_seen||0).getTime()<5*60000,status=onLeave?'On Leave':!recent?'Absent / Offline':d.is_tracking?'Tracking':'Not Tracking';return`<tr><td>${esc(nameOf(p.id))}</td><td>${esc(p.employee_id||'—')}</td><td>${esc(p.role||'Employee')}</td><td><span class="live-dot ${status==='Tracking'?'green':status==='Absent / Offline'?'red':status==='On Leave'?'amber':'gray'}"></span>${status}</td><td>${esc(pById(d?.project_id)?.name||d?.project_name||'No project')}</td><td>${esc(tById(d?.task_id)?.name||d?.task_name||'No task')}</td><td>${esc(d?.device_name||'—')}</td><td>${d?.last_seen?new Date(d.last_seen).toLocaleString():'—'}</td></tr>`}).join('')}</tbody></table></div></div>`}
-function drawLeave(){const canReview=roleIsManager();$('#attendanceBody').innerHTML=`<div class="toolbar"><button id="newLeave">+ New Leave Request</button></div><div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Portion</th><th>Reason</th><th>Status</th><th>Reviewer Comment</th><th>Actions</th></tr></thead><tbody>${state.leaveRequests.map(l=>`<tr><td>${esc(nameOf(l.user_id))}</td><td>${esc(l.leave_type||'')}</td><td>${esc(l.start_date||'')}</td><td>${esc(l.end_date||'')}</td><td>${esc(l.portion||'')}</td><td>${esc(l.reason||'')}</td><td>${esc(l.status||'Pending')}</td><td>${esc(l.reviewer_comment||'')}</td><td>${l.user_id===state.profile.id&&String(l.status).toLowerCase()==='pending'?`<button data-edit-leave="${l.id}">Edit</button>`:''}${canReview&&String(l.status).toLowerCase()==='pending'?` <button class="success" data-approve-leave="${l.id}">Approve</button> <button class="danger" data-reject-leave="${l.id}">Reject</button>`:''}</td></tr>`}).join('')}</tbody></table></div></div>`;$('#newLeave').onclick=()=>leaveModal();$$('[data-edit-leave]').forEach(b=>b.onclick=()=>leaveModal(state.leaveRequests.find(x=>x.id===b.dataset.editLeave)));$$('[data-approve-leave]').forEach(b=>b.onclick=()=>reviewLeave(b.dataset.approveLeave,'Approved'));$$('[data-reject-leave]').forEach(b=>b.onclick=()=>reviewLeave(b.dataset.rejectLeave,'Rejected'))}
+function drawLeave(){
+  const canReview=roleIsManager();
+  const rows=state.leaveRequests.map(l=>{
+    const isPending=String(l.status||'').toLowerCase()==='pending';
+    const canEdit=l.user_id===state.profile.id&&isPending;
+    let actions='';
+    if(canEdit) actions+=`<button data-edit-leave="${esc(l.id)}">Edit</button>`;
+    if(canReview&&isPending){
+      actions+=`${actions?' ':''}<button class="success" data-approve-leave="${esc(l.id)}">Approve</button> <button class="danger" data-reject-leave="${esc(l.id)}">Reject</button>`;
+    }
+    return `<tr>
+      <td>${esc(nameOf(l.user_id))}</td>
+      <td>${esc(l.leave_type||'')}</td>
+      <td>${esc(l.start_date||'')}</td>
+      <td>${esc(l.end_date||'')}</td>
+      <td>${esc(l.portion||'')}</td>
+      <td>${esc(l.reason||'')}</td>
+      <td>${esc(l.status||'Pending')}</td>
+      <td>${esc(l.reviewer_comment||'')}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+  $('#attendanceBody').innerHTML=`
+    <div class="toolbar"><button id="newLeave">+ New Leave Request</button></div>
+    <div class="card"><div class="table-wrap"><table class="table">
+      <thead><tr><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Portion</th><th>Reason</th><th>Status</th><th>Reviewer Comment</th><th>Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
+  $('#newLeave').onclick=()=>leaveModal();
+  $$('[data-edit-leave]').forEach(b=>b.onclick=()=>leaveModal(state.leaveRequests.find(x=>x.id===b.dataset.editLeave)));
+  $$('[data-approve-leave]').forEach(b=>b.onclick=()=>reviewLeave(b.dataset.approveLeave,'Approved'));
+  $$('[data-reject-leave]').forEach(b=>b.onclick=()=>reviewLeave(b.dataset.rejectLeave,'Rejected'));
+}
+
 function leaveModal(l=null){const ent=num(state.profile.annual_leave_days),used=usedLeave(state.profile.id);modal(l?'Edit Leave Request':'New Leave Request',`<div class="notice">Annual Leave: Entitlement ${fmt(ent)} · Used ${fmt(used)} · Remaining ${fmt(Math.max(0,ent-used))}</div><div class="form-grid"><div class="field"><label>Leave Type</label><select id="lvType">${['Annual Leave','Unpaid Leave','Sick Leave','Other'].map(x=>`<option ${l?.leave_type===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Start Date</label><input id="lvStart" type="date" value="${esc(l?.start_date||isoDay())}"></div><div class="field"><label>End Date</label><input id="lvEnd" type="date" value="${esc(l?.end_date||isoDay())}"></div><div class="field"><label>Portion</label><select id="lvPortion">${['Full Day','Morning Half','Afternoon Half'].map(x=>`<option ${l?.portion===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field span3"><label>Reason</label><textarea id="lvReason">${esc(l?.reason||'')}</textarea></div></div>`,async()=>{const row={user_id:state.profile.id,leave_type:$('#lvType').value,start_date:$('#lvStart').value,end_date:$('#lvEnd').value,portion:$('#lvPortion').value,reason:$('#lvReason').value.trim(),status:'Pending'};const r=l?await supabase.from('leave_requests').update(row).eq('id',l.id):await supabase.from('leave_requests').insert(row);if(r.error)return alert(r.error.message);closeModal();await loadAll()})}
 function reviewLeave(id,status){modal(`${status} Leave Request`,`<div class="field"><label>Reviewer Comment</label><textarea id="reviewComment"></textarea></div>`,async()=>{const {error}=await supabase.from('leave_requests').update({status,reviewer_comment:$('#reviewComment').value.trim()}).eq('id',id);if(error)return alert(error.message);closeModal();await loadAll()},status)}
 function usedLeave(uid){const y=new Date().getFullYear();return state.leaveRequests.filter(l=>l.user_id===uid&&String(l.status).toLowerCase()==='approved'&&String(l.leave_type||'').toLowerCase().includes('annual')&&new Date(l.start_date).getFullYear()===y).reduce((s,l)=>{if(String(l.portion).toLowerCase().includes('half'))return s+.5;let a=new Date(l.start_date),b=new Date(l.end_date),n=0;while(a<=b){if(![0,6].includes(a.getDay()))n++;a.setDate(a.getDate()+1)}return s+Math.max(1,n)},0)}
-function drawSchedule(){if(!roleIsManager()){$('#attendanceBody').innerHTML='<div class="notice">Admin/Manager access required.</div>';return}const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];$('#attendanceBody').innerHTML=`<div class="card"><div class="section-title">Weekly Work Schedule</div><div class="table-wrap"><table class="table"><thead><tr><th>Day</th><th>Workday</th><th>Morning</th><th>Afternoon</th><th>OT</th><th>Action</th></tr></thead><tbody>${days.map((d,i)=>{const s=state.shifts.find(x=>num(x.day_of_week)===i);return`<tr><td>${d}</td><td>${s?.is_workday===false?'Off':'Workday'}</td><td>${esc((s?.morning_start||'')+' - '+(s?.morning_end||''))}</td><td>${esc((s?.afternoon_start||'')+' - '+(s?.afternoon_end||''))}</td><td>${esc((s?.ot_start||'')+' - '+(s?.ot_end||''))}</td><td><button data-shift-day="${i}">Edit</button></td></tr>`}).join('')}</tbody></table></div></div><div class="card" style="margin-top:12px"><div class="toolbar"><div class="section-title grow">Holidays / Special Work Days</div><button id="addSpecial">+ Add Day</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Morning</th><th>Afternoon</th><th>OT</th><th>Actions</th></tr></thead><tbody>${state.specialDays.map(s=>`<tr><td>${esc(s.work_date)}</td><td>${esc(s.name||'')}</td><td>${s.is_workday?'Special Workday':'Holiday'}</td><td>${esc((s.morning_start||'')+' - '+(s.morning_end||''))}</td><td>${esc((s.afternoon_start||'')+' - '+(s.afternoon_end||''))}</td><td>${esc((s.ot_start||'')+' - '+(s.ot_end||''))}</td><td><button data-edit-special="${s.id}">Edit</button> <button class="danger" data-del-special="${s.id}">Delete</button></td></tr>`}).join('')}</tbody></table></div></div>`;$$('[data-shift-day]').forEach(b=>b.onclick=()=>shiftModal(num(b.dataset.shiftDay)));$('#addSpecial').onclick=()=>specialDayModal();$$('[data-edit-special]').forEach(b=>b.onclick=()=>specialDayModal(state.specialDays.find(x=>x.id===b.dataset.editSpecial)));$$('[data-del-special]').forEach(b=>b.onclick=()=>deleteSpecial(b.dataset.delSpecial))}
+function drawSchedule(){
+  if(!roleIsManager()){
+    $('#attendanceBody').innerHTML='<div class="notice">Admin/Manager access required.</div>';
+    return;
+  }
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const shiftRows=days.map((d,i)=>{
+    const sh=state.shifts.find(x=>num(x.day_of_week)===i)||{};
+    return `<tr>
+      <td>${esc(d)}</td>
+      <td>${sh.is_workday===false?'Off':'Workday'}</td>
+      <td>${esc((sh.morning_start||'')+' - '+(sh.morning_end||''))}</td>
+      <td>${esc((sh.afternoon_start||'')+' - '+(sh.afternoon_end||''))}</td>
+      <td>${esc((sh.ot_start||'')+' - '+(sh.ot_end||''))}</td>
+      <td><button data-shift-day="${i}">Edit</button></td>
+    </tr>`;
+  }).join('');
+  const specialRows=state.specialDays.map(sp=>`<tr>
+      <td>${esc(sp.work_date)}</td>
+      <td>${esc(sp.name||'')}</td>
+      <td>${sp.is_workday?'Special Workday':'Holiday'}</td>
+      <td>${esc((sp.morning_start||'')+' - '+(sp.morning_end||''))}</td>
+      <td>${esc((sp.afternoon_start||'')+' - '+(sp.afternoon_end||''))}</td>
+      <td>${esc((sp.ot_start||'')+' - '+(sp.ot_end||''))}</td>
+      <td><button data-edit-special="${esc(sp.id)}">Edit</button> <button class="danger" data-del-special="${esc(sp.id)}">Delete</button></td>
+    </tr>`).join('');
+  $('#attendanceBody').innerHTML=`
+    <div class="card">
+      <div class="section-title">Weekly Work Schedule</div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Day</th><th>Workday</th><th>Morning</th><th>Afternoon</th><th>OT</th><th>Action</th></tr></thead>
+        <tbody>${shiftRows}</tbody>
+      </table></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="toolbar"><div class="section-title grow">Holidays / Special Work Days</div><button id="addSpecial">+ Add Day</button></div>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Morning</th><th>Afternoon</th><th>OT</th><th>Actions</th></tr></thead>
+        <tbody>${specialRows}</tbody>
+      </table></div>
+    </div>`;
+  $$('[data-shift-day]').forEach(b=>b.onclick=()=>shiftModal(num(b.dataset.shiftDay)));
+  $('#addSpecial').onclick=()=>specialDayModal();
+  $$('[data-edit-special]').forEach(b=>b.onclick=()=>specialDayModal(state.specialDays.find(x=>x.id===b.dataset.editSpecial)));
+  $$('[data-del-special]').forEach(b=>b.onclick=()=>deleteSpecial(b.dataset.delSpecial));
+}
+
 function shiftModal(day){const s=state.shifts.find(x=>num(x.day_of_week)===day)||{};modal('Edit Work Schedule',`<div class="form-grid"><div class="field"><label>Workday</label><select id="shWork"><option value="true" ${s.is_workday!==false?'selected':''}>Workday</option><option value="false" ${s.is_workday===false?'selected':''}>Off</option></select></div>${[['Morning Start','morning_start'],['Morning End','morning_end'],['Afternoon Start','afternoon_start'],['Afternoon End','afternoon_end'],['OT Start','ot_start'],['OT End','ot_end']].map(([l,k])=>`<div class="field"><label>${l}</label><input id="${k}" type="time" value="${esc(s[k]||'')}"></div>`).join('')}</div>`,async()=>{const row={day_of_week:day,is_workday:$('#shWork').value==='true',morning_start:$('#morning_start').value||null,morning_end:$('#morning_end').value||null,afternoon_start:$('#afternoon_start').value||null,afternoon_end:$('#afternoon_end').value||null,ot_start:$('#ot_start').value||null,ot_end:$('#ot_end').value||null};const {error}=await supabase.from('work_shift_settings').upsert(row,{onConflict:'day_of_week'});if(error)return alert(error.message);closeModal();await loadAll()})}
 function specialDayModal(s=null){modal(s?'Edit Special Day':'Add Special Day',`<div class="form-grid"><div class="field"><label>Date</label><input id="sdDate" type="date" value="${esc(s?.work_date||isoDay())}"></div><div class="field"><label>Name</label><input id="sdName" value="${esc(s?.name||'')}"></div><div class="field"><label>Type</label><select id="sdWork"><option value="false" ${s?.is_workday?'':'selected'}>Holiday</option><option value="true" ${s?.is_workday?'selected':''}>Special Workday</option></select></div></div>`,async()=>{const row={work_date:$('#sdDate').value,name:$('#sdName').value.trim(),is_workday:$('#sdWork').value==='true'};const r=s?await supabase.from('special_work_days').update(row).eq('id',s.id):await supabase.from('special_work_days').upsert(row,{onConflict:'work_date'});if(r.error)return alert(r.error.message);closeModal();await loadAll()})} async function deleteSpecial(id){if(!confirm('Delete this day?'))return;const {error}=await supabase.from('special_work_days').delete().eq('id',id);if(error)alert(error.message);else loadAll()}
 function drawBalances(){if(!roleIsManager()){$('#attendanceBody').innerHTML='<div class="notice">Admin/Manager access required.</div>';return}$('#attendanceBody').innerHTML=`<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Employee ID</th><th>Annual Entitlement</th><th>Used</th><th>Remaining</th><th>Action</th></tr></thead><tbody>${state.profiles.filter(p=>p.active!==false).map(p=>{const e=num(p.annual_leave_days),u=usedLeave(p.id);return`<tr><td>${esc(nameOf(p.id))}</td><td>${esc(p.employee_id||'—')}</td><td>${fmt(e)}</td><td>${fmt(u)}</td><td>${fmt(Math.max(0,e-u))}</td><td><button data-leave-bal="${p.id}">Edit</button></td></tr>`}).join('')}</tbody></table></div></div>`;$$('[data-leave-bal]').forEach(b=>b.onclick=()=>leaveBalanceModal(b.dataset.leaveBal))}
@@ -115,4 +213,18 @@ async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(u
 function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
 function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Web:</b> Dashboard, Projects, Tasks, Change Orders, Production, Screenshots, Attendance, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.0</p></div>`}
 
-supabase.auth.getSession().then(async({data})=>{if(data.session?.user)showMain(data.session.user)});
+async function bootstrapAuth(){
+  try{
+    const {data,error}=await supabase.auth.getSession();
+    if(error) console.warn('Session restore error',error);
+    if(data?.session?.user) await showMain(data.session.user);
+  }catch(e){console.error('Auth bootstrap error',e);}
+}
+supabase.auth.onAuthStateChange((event,session)=>{
+  console.log('Auth state:',event);
+  if(event==='SIGNED_OUT'){
+    $('#mainView')?.classList.add('hidden');
+    $('#loginView')?.classList.remove('hidden');
+  }
+});
+bootstrapAuth();
