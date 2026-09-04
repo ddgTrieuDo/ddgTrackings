@@ -11,6 +11,7 @@ function esc(v=''){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':
 function num(v){return Number(v||0)}
 function fmtH(v){return num(v).toFixed(2)}
 function roleIsManager(){return ['Admin','Manager'].includes(state.profile?.role)}
+function roleIsAdmin(){return state.profile?.role==='Admin'}
 function projectById(id){return state.projects.find(x=>x.id===id)}
 function taskById(id){return state.tasks.find(x=>x.id===id)}
 function displayName(uid){return state.profiles.find(x=>x.id===uid)?.display_name||uid?.slice(0,8)||'—'}
@@ -41,7 +42,7 @@ function originalHours(pid){return state.phaseBudgets.filter(x=>x.project_id===p
 function approvedHours(pid){return state.changeOrders.filter(x=>x.project_id===pid&&String(x.status).toLowerCase()==='approved').reduce((s,x)=>s+num(x.approved_hours??x.requested_hours),0)}
 function openCO(pid){return state.changeOrders.filter(x=>x.project_id===pid&&String(x.status).toLowerCase()!=='approved'&&String(x.status).toLowerCase()!=='rejected').length}
 
-function showMain(profile){state.profile=profile;$('#loginView').classList.add('hidden');$('#mainView').classList.remove('hidden');$('#userSummary').innerHTML=`<b>${esc(profile.display_name||profile.email)}</b><br>${esc(profile.employee_id||'')} · ${esc(profile.role||'Employee')}`;loadAll()}
+function showMain(profile){state.profile=profile;$('#loginView').classList.add('hidden');$('#mainView').classList.remove('hidden');$('#employeesNav')?.classList.toggle('hidden',!roleIsAdmin());$('#userSummary').innerHTML=`<b>${esc(profile.display_name||profile.email)}</b><br>${esc(profile.employee_id||'')} · ${esc(profile.role||'Employee')}`;loadAll()}
 async function getProfile(user){const {data}=await supabase.from('profiles').select('*').eq('id',user.id).maybeSingle();return data||{id:user.id,email:user.email,display_name:user.email,role:'Employee'}}
 
 $('#loginBtn').onclick=async()=>{const email=$('#loginEmail').value.trim(),password=$('#loginPassword').value;$('#loginMsg').textContent='';const {data,error}=await supabase.auth.signInWithPassword({email,password});if(error){$('#loginMsg').textContent=error.message;return}showMain(await getProfile(data.user));}
@@ -51,9 +52,9 @@ $('#reloadBtn').onclick=loadAll;
 $$('.nav-btn[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;$$('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.add('hidden'));$(`#page-${state.page}`).classList.remove('hidden');render();});
 
 function render(){
-  const titles={dashboard:['Dashboard','Project portfolio overview'],projects:['Projects','Project setup and team management'],tasks:['Tasks','Task management and tracked hours'],changeorders:['Change Orders','Requested and approved project changes'],attendance:['Attendance','Live team and leave requests']};
+  const titles={dashboard:['Dashboard','Project portfolio overview'],projects:['Projects','Project setup and team management'],tasks:['Tasks','Task management and tracked hours'],changeorders:['Change Orders','Requested and approved project changes'],attendance:['Attendance','Live team and leave requests'],employees:['Employees','Employee accounts, roles and leave balances']};
   $('#pageTitle').textContent=titles[state.page][0];$('#pageSubtitle').textContent=titles[state.page][1];
-  if(state.page==='dashboard')renderDashboard(); if(state.page==='projects')renderProjects(); if(state.page==='tasks')renderTasks(); if(state.page==='changeorders')renderCO(); if(state.page==='attendance')renderAttendance();
+  if(state.page==='dashboard')renderDashboard(); if(state.page==='projects')renderProjects(); if(state.page==='tasks')renderTasks(); if(state.page==='changeorders')renderCO(); if(state.page==='attendance')renderAttendance(); if(state.page==='employees')renderEmployees();
 }
 
 function renderDashboard(){
@@ -78,6 +79,69 @@ function renderCO(){const rows=state.changeOrders;$('#page-changeorders').innerH
 function renderAttendance(){
  const activeNow=Date.now();const leaveToday=state.leaveRequests.filter(l=>String(l.status).toLowerCase()==='approved'&&new Date(l.start_date)<=new Date()&&new Date(l.end_date)>=new Date());
  $('#page-attendance').innerHTML=`<div class="card"><div class="section-title">Live Team</div><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Employee ID</th><th>Role</th><th>Status</th><th>Project</th><th>Task</th><th>Device</th><th>Last Seen</th></tr></thead><tbody>${state.profiles.map(p=>{const d=state.devices.filter(x=>x.user_id===p.id).sort((a,b)=>new Date(b.last_seen||0)-new Date(a.last_seen||0))[0];const onLeave=leaveToday.some(l=>l.user_id===p.id);const recent=d&&activeNow-new Date(d.last_seen||0).getTime()<5*60*1000;const status=onLeave?'On Leave':!recent?'Absent / Offline':d.is_tracking?'Tracking':'Not Tracking';return`<tr><td>${esc(p.display_name||p.email)}</td><td>${esc(p.employee_id||'—')}</td><td>${esc(p.role||'Employee')}</td><td>${esc(status)}</td><td>${esc(projectById(d?.project_id)?.name||d?.project_name||'No project')}</td><td>${esc(taskById(d?.task_id)?.name||d?.task_name||'No task')}</td><td>${esc(d?.device_name||'—')}</td><td>${d?.last_seen?new Date(d.last_seen).toLocaleString():'—'}</td></tr>`}).join('')}</tbody></table></div></div><div class="card" style="margin-top:12px"><div class="section-title">Leave Requests</div><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Type</th><th>Start</th><th>End</th><th>Portion</th><th>Reason</th><th>Status</th></tr></thead><tbody>${state.leaveRequests.map(l=>`<tr><td>${esc(displayName(l.user_id))}</td><td>${esc(l.leave_type||'')}</td><td>${esc(l.start_date||'')}</td><td>${esc(l.end_date||'')}</td><td>${esc(l.portion||'')}</td><td>${esc(l.reason||'')}</td><td>${esc(l.status||'Pending')}</td></tr>`).join('')}</tbody></table></div></div>`}
+
+function employeeUsedLeave(userId){
+  const year=new Date().getFullYear();
+  return state.leaveRequests.filter(l=>l.user_id===userId&&String(l.status).toLowerCase()==='approved'&&String(l.leave_type||'').toLowerCase().includes('annual')&&new Date(l.start_date).getFullYear()===year).reduce((sum,l)=>{
+    if(String(l.portion||'').toLowerCase().includes('half')) return sum+0.5;
+    const a=new Date(l.start_date),b=new Date(l.end_date);
+    if(!Number.isFinite(a.getTime())||!Number.isFinite(b.getTime())) return sum;
+    let days=0,d=new Date(a.getFullYear(),a.getMonth(),a.getDate());
+    const end=new Date(b.getFullYear(),b.getMonth(),b.getDate());
+    while(d<=end){const wd=d.getDay();if(wd!==0&&wd!==6)days++;d.setDate(d.getDate()+1)}
+    return sum+Math.max(1,days);
+  },0);
+}
+
+function renderEmployees(){
+  if(!roleIsAdmin()){ $('#page-employees').innerHTML='<div class="card"><b>Admin access required.</b></div>'; return; }
+  const rows=[...state.profiles].sort((a,b)=>String(a.display_name||a.email||'').localeCompare(String(b.display_name||b.email||'')));
+  $('#page-employees').innerHTML=`<div class="toolbar employee-toolbar"><button id="newEmployee" class="primary">+ New Employee</button><div class="field grow"><label>Search</label><input id="employeeSearch" placeholder="Search employee, ID or email..."></div></div>
+  <div class="grid employee-kpis"><div class="kpi"><div class="label">Employees</div><div class="value">${rows.length}</div></div><div class="kpi"><div class="label">Active</div><div class="value">${rows.filter(x=>x.active!==false).length}</div></div><div class="kpi"><div class="label">Admins</div><div class="value">${rows.filter(x=>x.role==='Admin').length}</div></div><div class="kpi"><div class="label">Managers</div><div class="value">${rows.filter(x=>x.role==='Manager').length}</div></div></div>
+  <div class="table-wrap"><table class="table" id="employeeTable"><thead><tr><th>Employee</th><th>Employee ID</th><th>Email</th><th>Role</th><th>Annual Leave</th><th>Used</th><th>Remaining</th><th>Status</th><th>Actions</th></tr></thead><tbody>${rows.map(p=>{const entitlement=num(p.annual_leave_days),used=employeeUsedLeave(p.id),remaining=Math.max(0,entitlement-used);return `<tr data-employee-row data-search="${esc([p.display_name,p.employee_id,p.email,p.role].join(' ').toLowerCase())}"><td><b>${esc(p.display_name||p.email||'—')}</b></td><td>${esc(p.employee_id||'—')}</td><td>${esc(p.email||'—')}</td><td>${esc(p.role||'Employee')}</td><td>${fmtH(entitlement)}</td><td>${fmtH(used)}</td><td>${fmtH(remaining)}</td><td><span class="status ${p.active===false?'bad':'good'}">${p.active===false?'Inactive':'Active'}</span></td><td><button data-edit-employee="${p.id}">Edit</button> <button class="${p.active===false?'success':'danger'}" data-toggle-employee="${p.id}">${p.active===false?'Activate':'Deactivate'}</button></td></tr>`}).join('')}</tbody></table></div>
+  <div class="muted small" style="margin-top:10px">Employee accounts use Supabase Auth. Deactivate keeps historical projects, tasks and time entries.</div>`;
+  $('#newEmployee').onclick=()=>employeeModal();
+  $('#employeeSearch').oninput=e=>{const q=e.target.value.trim().toLowerCase();$$('[data-employee-row]').forEach(r=>r.classList.toggle('hidden',q&&!r.dataset.search.includes(q)))};
+  $$('[data-edit-employee]').forEach(b=>b.onclick=()=>employeeModal(state.profiles.find(p=>p.id===b.dataset.editEmployee)));
+  $$('[data-toggle-employee]').forEach(b=>b.onclick=()=>toggleEmployee(b.dataset.toggleEmployee));
+}
+
+async function createAuthEmployee(email,password,metadata){
+  const temp=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+  const {data,error}=await temp.auth.signUp({email,password,options:{data:metadata}});
+  try{await temp.auth.signOut()}catch{}
+  if(error)throw error;
+  return data.user;
+}
+
+function employeeModal(p=null){
+  const editing=!!p;
+  modal(editing?'Edit Employee':'New Employee',`<div class="form-grid">
+    <div class="field"><label>Display Name</label><input id="eName" value="${esc(p?.display_name||'')}"></div>
+    <div class="field"><label>Employee ID</label><input id="eEmployeeId" value="${esc(p?.employee_id||'')}"></div>
+    <div class="field"><label>Email</label><input id="eEmail" type="email" value="${esc(p?.email||'')}" ${editing?'readonly':''}></div>
+    <div class="field"><label>Role</label><select id="eRole">${['Employee','Manager','Admin'].map(r=>`<option ${p?.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
+    <div class="field"><label>Annual Leave Days</label><input id="eLeave" type="number" min="0" step="0.5" value="${num(p?.annual_leave_days)}"></div>
+    ${editing?'':`<div class="field"><label>Temporary Password</label><input id="ePassword" type="password" minlength="6" placeholder="Minimum 6 characters"></div>`}
+    <div class="field span3"><label><input id="eActive" type="checkbox" ${p?.active===false?'':'checked'}> Active employee</label></div>
+  </div>`,async()=>{
+    const display_name=$('#eName').value.trim(),employee_id=$('#eEmployeeId').value.trim(),email=$('#eEmail').value.trim().toLowerCase(),role=$('#eRole').value,annual_leave_days=num($('#eLeave').value),active=$('#eActive').checked;
+    if(!display_name||!employee_id||!email)return alert('Display Name, Employee ID and Email are required.');
+    let userId=p?.id;
+    if(!editing){const password=$('#ePassword').value;if(password.length<6)return alert('Temporary password must be at least 6 characters.');try{const user=await createAuthEmployee(email,password,{display_name,employee_id});if(!user?.id)return alert('Account was not created. Check Supabase Auth settings.');userId=user.id}catch(e){return alert(e.message||String(e))}
+      for(let i=0;i<8;i++){const {data}=await supabase.from('profiles').select('id').eq('id',userId).maybeSingle();if(data)break;await new Promise(r=>setTimeout(r,250))}
+    }
+    const row={display_name,employee_id,email,role,annual_leave_days,active};
+    const {error}=await supabase.from('profiles').update(row).eq('id',userId);
+    if(error)return alert(error.message);closeModal();await loadAll();
+  });
+}
+
+async function toggleEmployee(id){
+  const p=state.profiles.find(x=>x.id===id);if(!p)return;if(id===state.profile?.id&&p.active!==false)return alert('You cannot deactivate your own account from this page.');
+  const next=p.active===false;if(!confirm(`${next?'Activate':'Deactivate'} ${p.display_name||p.email}?`))return;
+  const {error}=await supabase.from('profiles').update({active:next}).eq('id',id);if(error)alert(error.message);else loadAll();
+}
 
 function modal(title,html,onSave){$('#modal').innerHTML=`<h3>${esc(title)}</h3>${html}<div class="modal-actions"><button id="modalCancel">Cancel</button><button id="modalSave" class="primary">Save</button></div>`;$('#modalBackdrop').classList.remove('hidden');$('#modalCancel').onclick=closeModal;$('#modalSave').onclick=onSave}
 function closeModal(){$('#modalBackdrop').classList.add('hidden')}
