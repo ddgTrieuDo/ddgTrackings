@@ -42,7 +42,7 @@ function originalHours(pid){return state.phaseBudgets.filter(x=>x.project_id===p
 function approvedHours(pid){return state.changeOrders.filter(x=>x.project_id===pid&&String(x.status).toLowerCase()==='approved').reduce((s,x)=>s+num(x.approved_hours??x.requested_hours),0)}
 function openCO(pid){return state.changeOrders.filter(x=>x.project_id===pid&&String(x.status).toLowerCase()!=='approved'&&String(x.status).toLowerCase()!=='rejected').length}
 
-function showMain(profile){state.profile=profile;$('#loginView').classList.add('hidden');$('#mainView').classList.remove('hidden');$('#employeesNav')?.classList.toggle('hidden',!roleIsAdmin());$('#userSummary').innerHTML=`<b>${esc(profile.display_name||profile.email)}</b><br>${esc(profile.employee_id||'')} · ${esc(profile.role||'Employee')}`;loadAll()}
+function showMain(profile){state.profile=profile;$('#loginView').classList.add('hidden');$('#mainView').classList.remove('hidden');$('#employeesNav')?.classList.toggle('hidden',!roleIsAdmin());$('#monitorNav')?.classList.toggle('hidden',!roleIsManager());$('#userSummary').innerHTML=`<b>${esc(profile.display_name||profile.email)}</b><br>${esc(profile.employee_id||'')} · ${esc(profile.role||'Employee')}`;loadAll()}
 async function getProfile(user){const {data}=await supabase.from('profiles').select('*').eq('id',user.id).maybeSingle();return data||{id:user.id,email:user.email,display_name:user.email,role:'Employee'}}
 
 $('#loginBtn').onclick=async()=>{const email=$('#loginEmail').value.trim(),password=$('#loginPassword').value;$('#loginMsg').textContent='';const {data,error}=await supabase.auth.signInWithPassword({email,password});if(error){$('#loginMsg').textContent=error.message;return}showMain(await getProfile(data.user));}
@@ -52,9 +52,9 @@ $('#reloadBtn').onclick=loadAll;
 $$('.nav-btn[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;$$('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.add('hidden'));$(`#page-${state.page}`).classList.remove('hidden');render();});
 
 function render(){
-  const titles={dashboard:['Dashboard','Project portfolio overview'],projects:['Projects','Project setup and team management'],tasks:['Tasks','Task management and tracked hours'],changeorders:['Change Orders','Requested and approved project changes'],attendance:['Attendance','Live team and leave requests'],employees:['Employees','Employee accounts, roles and leave balances']};
+  const titles={dashboard:['Dashboard','Project portfolio overview'],projects:['Projects','Project setup and team management'],tasks:['Tasks','Task management and tracked hours'],changeorders:['Change Orders','Requested and approved project changes'],attendance:['Attendance','Live team and leave requests'],monitor:['Team Monitor','View employee screenshots by employee and date'],employees:['Employees','Employee accounts, roles and leave balances']};
   $('#pageTitle').textContent=titles[state.page][0];$('#pageSubtitle').textContent=titles[state.page][1];
-  if(state.page==='dashboard')renderDashboard(); if(state.page==='projects')renderProjects(); if(state.page==='tasks')renderTasks(); if(state.page==='changeorders')renderCO(); if(state.page==='attendance')renderAttendance(); if(state.page==='employees')renderEmployees();
+  if(state.page==='dashboard')renderDashboard(); if(state.page==='projects')renderProjects(); if(state.page==='tasks')renderTasks(); if(state.page==='changeorders')renderCO(); if(state.page==='attendance')renderAttendance(); if(state.page==='monitor')renderMonitor(); if(state.page==='employees')renderEmployees();
 }
 
 function renderDashboard(){
@@ -80,6 +80,82 @@ function renderAttendance(){
  const activeNow=Date.now();const leaveToday=state.leaveRequests.filter(l=>String(l.status).toLowerCase()==='approved'&&new Date(l.start_date)<=new Date()&&new Date(l.end_date)>=new Date());
  $('#page-attendance').innerHTML=`<div class="card"><div class="section-title">Live Team</div><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Employee ID</th><th>Role</th><th>Status</th><th>Project</th><th>Task</th><th>Device</th><th>Last Seen</th></tr></thead><tbody>${state.profiles.map(p=>{const d=state.devices.filter(x=>x.user_id===p.id).sort((a,b)=>new Date(b.last_seen||0)-new Date(a.last_seen||0))[0];const onLeave=leaveToday.some(l=>l.user_id===p.id);const recent=d&&activeNow-new Date(d.last_seen||0).getTime()<5*60*1000;const status=onLeave?'On Leave':!recent?'Absent / Offline':d.is_tracking?'Tracking':'Not Tracking';return`<tr><td>${esc(p.display_name||p.email)}</td><td>${esc(p.employee_id||'—')}</td><td>${esc(p.role||'Employee')}</td><td>${esc(status)}</td><td>${esc(projectById(d?.project_id)?.name||d?.project_name||'No project')}</td><td>${esc(taskById(d?.task_id)?.name||d?.task_name||'No task')}</td><td>${esc(d?.device_name||'—')}</td><td>${d?.last_seen?new Date(d.last_seen).toLocaleString():'—'}</td></tr>`}).join('')}</tbody></table></div></div><div class="card" style="margin-top:12px"><div class="section-title">Leave Requests</div><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Type</th><th>Start</th><th>End</th><th>Portion</th><th>Reason</th><th>Status</th></tr></thead><tbody>${state.leaveRequests.map(l=>`<tr><td>${esc(displayName(l.user_id))}</td><td>${esc(l.leave_type||'')}</td><td>${esc(l.start_date||'')}</td><td>${esc(l.end_date||'')}</td><td>${esc(l.portion||'')}</td><td>${esc(l.reason||'')}</td><td>${esc(l.status||'Pending')}</td></tr>`).join('')}</tbody></table></div></div>`}
 
+
+
+async function fetchMonitorShots(userId, dayValue){
+  const day=new Date(dayValue+'T00:00:00');
+  if(Number.isNaN(day.getTime()))return [];
+  const next=new Date(day);next.setDate(next.getDate()+1);
+  const {data,error}=await supabase.from('screenshots')
+    .select('id,user_id,storage_path,captured_at,width,height,bytes,activity,monitor_index,project_id,task_id')
+    .eq('user_id',userId)
+    .gte('captured_at',day.toISOString())
+    .lt('captured_at',next.toISOString())
+    .order('captured_at',{ascending:false});
+  if(error)throw error;
+  return data||[];
+}
+
+async function signedScreenshotUrl(storagePath){
+  const {data,error}=await supabase.storage.from('screenshots').createSignedUrl(storagePath,600);
+  if(error)throw error;
+  return data?.signedUrl||'';
+}
+
+function monitorDateDefault(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+function renderMonitor(){
+  if(!roleIsManager()){
+    $('#page-monitor').innerHTML='<div class="card"><b>Access denied.</b> Team Monitor is available to Admin/Manager only.</div>';
+    return;
+  }
+  const people=state.profiles.filter(p=>p.active!==false).sort((a,b)=>(a.display_name||'').localeCompare(b.display_name||''));
+  const current=people[0]?.id||'';
+  $('#page-monitor').innerHTML=`
+    <div class="monitor-toolbar card">
+      <div class="field monitor-employee"><label>Employee</label><select id="monitorEmployee">${people.map(p=>`<option value="${p.id}">${esc(p.display_name||p.email)}${p.employee_id?' ('+esc(p.employee_id)+')':''} · ${esc(p.role||'Employee')}</option>`).join('')}</select></div>
+      <div class="field"><label>Date</label><input id="monitorDate" type="date" value="${monitorDateDefault()}"></div>
+      <button id="monitorReload" class="primary">Reload</button>
+    </div>
+    <div id="monitorInfo" class="monitor-info muted">Select an employee and date to view screenshots.</div>
+    <div id="monitorGrid" class="screenshot-grid"></div>`;
+  $('#monitorEmployee').onchange=loadMonitorShots;
+  $('#monitorDate').onchange=loadMonitorShots;
+  $('#monitorReload').onclick=loadMonitorShots;
+  if(current)loadMonitorShots();
+}
+
+async function loadMonitorShots(){
+  const uid=$('#monitorEmployee')?.value, day=$('#monitorDate')?.value;
+  if(!uid||!day)return;
+  const person=state.profiles.find(p=>p.id===uid);
+  const info=$('#monitorInfo'),grid=$('#monitorGrid');
+  info.textContent=`Loading screenshots for ${person?.display_name||person?.email||'employee'}...`;
+  grid.innerHTML='<div class="muted">Loading...</div>';
+  try{
+    const shots=await fetchMonitorShots(uid,day);
+    if(!shots.length){grid.innerHTML='';info.textContent=`${person?.display_name||person?.email||'Employee'} has no screenshots on ${day}.`;return;}
+    info.textContent=`${person?.display_name||person?.email||'Employee'}: ${shots.length} screenshots on ${day}.`;
+    const cards=[];
+    for(const shot of shots.slice(0,200)){
+      let url='';
+      try{url=await signedScreenshotUrl(shot.storage_path)}catch(e){console.warn(e)}
+      const t=shot.captured_at?new Date(shot.captured_at):null;
+      const time=t? t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}):'—';
+      const project=projectById(shot.project_id)?.name||'No project';
+      const task=taskById(shot.task_id)?.name||'No task';
+      cards.push(`<article class="shot-card" data-shot-open="${esc(url)}">
+        <div class="shot-thumb">${url?`<img src="${esc(url)}" alt="Screenshot ${esc(time)}" loading="lazy">`:'<div class="shot-missing">Preview unavailable</div>'}</div>
+        <div class="shot-meta"><b>${esc(time)}</b><span>${esc(project)} · ${esc(task)}</span>${shot.activity?`<span>Activity: ${esc(shot.activity)}</span>`:''}</div>
+      </article>`);
+    }
+    grid.innerHTML=cards.join('');
+    $$('[data-shot-open]').forEach(el=>el.onclick=()=>{const url=el.dataset.shotOpen;if(url)window.open(url,'_blank','noopener')});
+  }catch(e){grid.innerHTML='';info.textContent='Could not load screenshots: '+(e.message||String(e));}
+}
 function employeeUsedLeave(userId){
   const year=new Date().getFullYear();
   return state.leaveRequests.filter(l=>l.user_id===userId&&String(l.status).toLowerCase()==='approved'&&String(l.leave_type||'').toLowerCase().includes('annual')&&new Date(l.start_date).getFullYear()===year).reduce((sum,l)=>{
