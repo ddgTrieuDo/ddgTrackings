@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DDG Tracking Web</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app">
+  <div id="loginView" class="login-shell">
+    <div class="login-card">
+      <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>DDG Tracking</h1><p>Web Management Portal</p></div></div>
+      <label>Email</label>
+      <input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com" />
+      <label>Password</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" />
+      <button id="loginBtn" class="primary full">Login</button>
+      <div id="loginMsg" class="msg"></div>
+    </div>
+  </div>
+
+  <div id="mainView" class="shell hidden">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-badge">DDG</div><span>Tracking Web</span></div>
+      <nav id="nav">
+        <button data-page="dashboard" class="nav-btn active">Dashboard</button>
+        <button data-page="projects" class="nav-btn">Projects</button>
+        <button data-page="tasks" class="nav-btn">Tasks</button>
+        <button data-page="changeorders" class="nav-btn">Change Orders</button>
+        <button data-page="attendance" class="nav-btn">Attendance</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div id="userSummary"></div>
+        <button id="logoutBtn" class="nav-btn danger-text">Logout</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h2 id="pageTitle">Dashboard</h2>
+          <p id="pageSubtitle">Project portfolio overview</p>
+        </div>
+        <div class="top-actions"><span id="syncStatus" class="pill">Ready</span><button id="reloadBtn">Reload</button></div>
+      </header>
+
+      <section id="page-dashboard" class="page"></section>
+      <section id="page-projects" class="page hidden"></section>
+      <section id="page-tasks" class="page hidden"></section>
+      <section id="page-changeorders" class="page hidden"></section>
+      <section id="page-attendance" class="page hidden"></section>
+    </main>
+  </div>
+</div>
+
+<div id="modalBackdrop" class="modal-backdrop hidden"><div id="modal" class="modal"></div></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
