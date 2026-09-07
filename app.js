@@ -1,10 +1,12 @@
 const SUPABASE_URL='https://qxigevxcqkdsapxosvhh.supabase.co';
 const SUPABASE_KEY='sb_publishable_G_lto6J9yokrmYH8ib7trQ_KP1Lajbn';
-const createClient = window.supabase?.createClient;
-if (!createClient) {
-  throw new Error('Supabase library failed to load. Check your internet connection or CDN access.');
+const createClient = window.supabase && window.supabase.createClient;
+if (typeof createClient !== 'function') {
+  const el=document.getElementById('loginMsg');
+  if(el) el.textContent='Supabase library is not available.';
+  throw new Error('Supabase library is not available.');
 }
-const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storageKey:'ddg-tracking-web-auth'}});
+const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'ddg-tracking-web-auth'}});
 
 const state={profile:null,page:'dashboard',jobsTab:'setup',tasksTab:'mine',attendanceTab:'live',projects:[],tasks:[],profiles:[],members:[],assignees:[],timeEntries:[],phaseBudgets:[],changeOrders:[],devices:[],leaveRequests:[],shifts:[],specialDays:[],screenshots:[]};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
@@ -38,8 +40,19 @@ $('#loginBtn').onclick=async()=>{
   if(!email||!password){msg.textContent='Please enter email and password.';return;}
   btn.disabled=true; btn.textContent='Signing in...';
   try{
+    // Basic connectivity check gives a clearer error on GitHub Pages / restricted networks.
+    try {
+      const r = await fetch(SUPABASE_URL + '/auth/v1/health', { headers: { apikey: SUPABASE_KEY } });
+      if (!r.ok) console.warn('Supabase health check:', r.status);
+    } catch (netErr) {
+      throw new Error('Cannot reach Supabase from this browser. Check firewall, DNS, VPN, or browser extensions.');
+    }
     const {data,error}=await supabase.auth.signInWithPassword({email,password});
-    if(error){msg.textContent=error.message||'Login failed.';return;}
+    if(error){
+      console.error('Supabase login error', error);
+      msg.textContent=(error.message||'Login failed.') + (error.status ? ` (HTTP ${error.status})` : '');
+      return;
+    }
     if(!data?.user){msg.textContent='Login succeeded but no user session was returned.';return;}
     await showMain(data.user);
   }catch(e){
@@ -211,7 +224,7 @@ function employeeModal(p=null){modal(p?'Edit Employee':'New Employee',`<div clas
 async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await supabase.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
 
 function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Web:</b> Dashboard, Projects, Tasks, Change Orders, Production, Screenshots, Attendance, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.0</p></div>`}
+function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Web:</b> Dashboard, Projects, Tasks, Change Orders, Production, Screenshots, Attendance, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.2</p></div>`}
 
 async function bootstrapAuth(){
   try{
