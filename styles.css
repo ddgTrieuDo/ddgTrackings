@@ -12,3 +12,5 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 @media(max-width:760px){.app-shell{grid-template-columns:1fr;grid-template-rows:38px auto 1fr;grid-template-areas:"title" "side" "main"}.sidebar{padding:6px;min-height:auto}.sidebar nav{display:flex;flex-direction:row;overflow:auto}.nav-btn{width:auto;white-space:nowrap}.sidebar-bottom{display:none}.content-head{padding:14px}.page{padding:6px 14px 20px}.kpis{grid-template-columns:repeat(2,1fr)}.form-grid,.metric-grid{grid-template-columns:1fr}.form-grid .span2{grid-column:auto}}
 
 .login-version{margin-top:8px;text-align:center;color:#667085;font-size:11px}
+
+.clickable-readonly{cursor:pointer;background:#fff}.clickable-readonly:hover{border-color:#2f6fed;box-shadow:0 0 0 2px rgba(47,111,237,.08)}
