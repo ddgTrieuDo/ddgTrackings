@@ -32,6 +32,34 @@ function modal(title,html,onSave,saveText='Save'){ $('#modal').innerHTML=`<h3>${
 
 async function getProfile(user){const {data}=await supabase.from('profiles').select('*').eq('id',user.id).maybeSingle();return data||{id:user.id,email:user.email,display_name:user.email,role:'Employee'}}
 async function showMain(user){state.profile=await getProfile(user);$('#loginView').classList.add('hidden');$('#mainView').classList.remove('hidden');$('#monitorNav').classList.toggle('hidden',!roleIsManager());$('#employeesNav').classList.toggle('hidden',!roleIsAdmin());$('#userSummary').innerHTML=`<b>${esc(state.profile.display_name||state.profile.email)}</b><br>${esc(state.profile.employee_id||'')} · ${esc(state.profile.role||'Employee')}`;await loadAll()}
+async function loginWithRestFallback(email,password){
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),20000);
+  try{
+    const r=await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`,{
+      method:'POST',
+      signal:ctrl.signal,
+      headers:{
+        'apikey':SUPABASE_KEY,
+        'Authorization':`Bearer ${SUPABASE_KEY}`,
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({email,password})
+    });
+    const raw=await r.text();
+    let body={};
+    try{body=raw?JSON.parse(raw):{}}catch{body={message:raw}}
+    if(!r.ok){
+      const m=body?.msg||body?.message||body?.error_description||body?.error||`HTTP ${r.status}`;
+      throw new Error(`Supabase Auth: ${m} (HTTP ${r.status})`);
+    }
+    if(!body.access_token||!body.refresh_token) throw new Error('Supabase Auth returned no session token.');
+    const {data,error}=await supabase.auth.setSession({access_token:body.access_token,refresh_token:body.refresh_token});
+    if(error) throw error;
+    return data;
+  }finally{clearTimeout(timer)}
+}
+
 $('#loginBtn').onclick=async()=>{
   const btn=$('#loginBtn'), msg=$('#loginMsg');
   const email=$('#loginEmail').value.trim();
@@ -40,24 +68,32 @@ $('#loginBtn').onclick=async()=>{
   if(!email||!password){msg.textContent='Please enter email and password.';return;}
   btn.disabled=true; btn.textContent='Signing in...';
   try{
-    // Basic connectivity check gives a clearer error on GitHub Pages / restricted networks.
-    try {
-      const r = await fetch(SUPABASE_URL + '/auth/v1/health', { headers: { apikey: SUPABASE_KEY } });
-      if (!r.ok) console.warn('Supabase health check:', r.status);
-    } catch (netErr) {
-      throw new Error('Cannot reach Supabase from this browser. Check firewall, DNS, VPN, or browser extensions.');
+    let data=null;
+    let sdkError=null;
+    try{
+      const result=await Promise.race([
+        supabase.auth.signInWithPassword({email,password}),
+        new Promise((_,reject)=>setTimeout(()=>reject(new Error('Supabase SDK login timed out.')),15000))
+      ]);
+      if(result?.error) sdkError=result.error; else data=result?.data||null;
+    }catch(e){sdkError=e}
+
+    if(!data?.user){
+      console.warn('Supabase SDK login failed; trying direct Auth REST endpoint.',sdkError);
+      msg.textContent='Retrying authentication...';
+      data=await loginWithRestFallback(email,password);
     }
-    const {data,error}=await supabase.auth.signInWithPassword({email,password});
-    if(error){
-      console.error('Supabase login error', error);
-      msg.textContent=(error.message||'Login failed.') + (error.status ? ` (HTTP ${error.status})` : '');
-      return;
+    if(!data?.user){
+      const {data:ud,error:ue}=await supabase.auth.getUser();
+      if(ue) throw ue;
+      data={user:ud?.user};
     }
-    if(!data?.user){msg.textContent='Login succeeded but no user session was returned.';return;}
+    if(!data?.user) throw new Error('Login succeeded but no user session was returned.');
+    msg.textContent='Login successful. Loading data...';
     await showMain(data.user);
   }catch(e){
     console.error('Login error',e);
-    msg.textContent=e?.message||'Unable to connect to Supabase.';
+    msg.textContent=e?.name==='AbortError'?'Connection to Supabase timed out.':(e?.message||'Unable to connect to Supabase.');
   }finally{btn.disabled=false;btn.textContent='Login';}
 };
 $('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginBtn').click()});
@@ -224,7 +260,7 @@ function employeeModal(p=null){modal(p?'Edit Employee':'New Employee',`<div clas
 async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await supabase.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
 
 function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Web:</b> Dashboard, Projects, Tasks, Change Orders, Production, Screenshots, Attendance, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.2</p></div>`}
+function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Web:</b> Dashboard, Projects, Tasks, Change Orders, Production, Screenshots, Attendance, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.3</p></div>`}
 
 async function bootstrapAuth(){
   try{

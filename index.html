@@ -13,7 +13,7 @@
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.3 · GitHub Pages login fix</div>
     </div>
   </section>
 
@@ -71,6 +71,8 @@
       document.head.appendChild(s);
     });
   }
+  window.addEventListener('error', e => { setMsg('JavaScript error: ' + (e.message || 'Unknown error')); });
+  window.addEventListener('unhandledrejection', e => { const r=e.reason; setMsg('JavaScript error: ' + (r?.message || String(r || 'Unhandled promise rejection'))); });
   async function boot() {
     setMsg('Loading authentication...');
     let loaded = false;
@@ -90,8 +92,8 @@
       return;
     }
     try {
-      await loadScript('./app.js?v=4.2');
-      setMsg('');
+      await loadScript('./app.js?v=4.3');
+      if (loginMsg() && loginMsg().textContent === 'Loading authentication...') setMsg('');
     } catch (e) {
       console.error(e);
       setMsg('Web app failed to start. Open F12 > Console for details.');
