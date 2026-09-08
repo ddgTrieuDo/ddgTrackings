@@ -92,7 +92,7 @@
       return;
     }
     try {
-      await loadScript('./app.js?v=4.10');
+      await loadScript('./app.js?v=4.11');
       if (loginMsg() && loginMsg().textContent === 'Loading authentication...') setMsg('');
     } catch (e) {
       console.error(e);

@@ -14,3 +14,6 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 .login-version{margin-top:8px;text-align:center;color:#667085;font-size:11px}
 
 .clickable-readonly{cursor:pointer;background:#fff}.clickable-readonly:hover{border-color:#2f6fed;box-shadow:0 0 0 2px rgba(47,111,237,.08)}
+
+.project-link{background:transparent;border:0;padding:0;margin:0;color:#0b5bd3;font:inherit;font-weight:600;cursor:pointer;text-align:left}
+.project-link:hover{text-decoration:underline}
