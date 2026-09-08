@@ -8,6 +8,19 @@ if (typeof createClient !== 'function') {
 }
 const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'ddg-tracking-web-auth'}});
 
+
+const DEFAULT_PROJECT_PHASES = [
+  '1. Project Setup',
+  '2. Modeling',
+  '3. Engineering & Supports',
+  '4. Coordination',
+  '5. Shop Drawings',
+  '6. Spooling',
+  '7. BOM / Reports',
+  '8. Fabrication Support',
+  '9. QC / Final Review',
+  '10. As-Built / Closeout'
+];
 const state={profile:null,page:'dashboard',jobsTab:'setup',tasksTab:'mine',attendanceTab:'live',projects:[],tasks:[],profiles:[],members:[],assignees:[],timeEntries:[],phaseBudgets:[],changeOrders:[],devices:[],leaveRequests:[],shifts:[],specialDays:[],screenshots:[]};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -139,7 +152,44 @@ async function saveProjectSetup(pid){const row={job_number:$('#pjJob').value.tri
 async function setProjectLead(pid,uid){const ms=projectMembers(pid);for(const m of ms.filter(x=>String(x.role_in_project).toLowerCase()==='lead'&&x.user_id!==uid))await sb.from('project_members').update({role_in_project:'member'}).eq('project_id',pid).eq('user_id',m.user_id);if(uid)await sb.from('project_members').update({role_in_project:'lead'}).eq('project_id',pid).eq('user_id',uid)}
 function phaseModal(pid,ph=null){modal(ph?'Edit Phase':'Add Phase',`<div class="form-grid"><div class="field"><label>Phase</label><input id="phName" value="${esc(ph?.phase||'')}"></div><div class="field"><label>Estimated Hours</label><input id="phHours" type="number" min="0" step="0.25" value="${num(ph?.estimated_hours)}"></div></div>`,async()=>{const row={project_id:pid,phase:$('#phName').value.trim(),estimated_hours:num($('#phHours').value),sort_order:ph?.sort_order??state.phaseBudgets.filter(x=>x.project_id===pid).length+1};if(!row.phase)return alert('Phase is required.');let r=ph?await sb.from('project_phase_budgets').update(row).eq('id',ph.id):await sb.from('project_phase_budgets').insert(row);if(r.error)return alert(r.error.message);closeModal();await loadAll()})}
 async function deletePhase(id,pid){const ph=state.phaseBudgets.find(x=>x.id===id);if(state.tasks.some(t=>t.project_id===pid&&t.phase===ph?.phase))return alert('Move Tasks to another Phase first.');if(!confirm('Remove this Phase?'))return;const {error}=await sb.from('project_phase_budgets').delete().eq('id',id);if(error)alert(error.message);else loadAll()}
-function projectModal(p=null,renameOnly=false){modal(p?'Edit Project':'New Project',`<div class="form-grid"><div class="field"><label>Project Name</label><input id="mName" value="${esc(p?.name||'')}"></div>${renameOnly?'':`<div class="field"><label>Customer</label><input id="mCustomer" value="${esc(p?.customer||'')}"></div><div class="field"><label>Status</label><select id="mStatus">${['Not Started','On Track','At Risk','Over Hours','On Hold','Completed'].map(x=>`<option ${p?.status===x?'selected':''}>${x}</option>`).join('')}</select></div>`}</div>`,async()=>{const row={name:$('#mName').value.trim()};if(!renameOnly)Object.assign(row,{customer:$('#mCustomer').value.trim(),status:$('#mStatus').value,active:true});const r=p?await sb.from('projects').update(row).eq('id',p.id):await sb.from('projects').insert(row);if(r.error)return alert(r.error.message);closeModal();await loadAll()})}
+function projectModal(p=null,renameOnly=false){
+ if(renameOnly){
+  modal('Rename Project',`<div class="field"><label>Project Name</label><input id="mName" value="${esc(p?.name||'')}"></div>`,async()=>{
+   const name=$('#mName').value.trim();if(!name)return alert('Project Name is required.');
+   const r=await sb.from('projects').update({name}).eq('id',p.id);if(r.error)return alert(r.error.message);closeModal();await loadAll();
+  });return;
+ }
+ const people=state.profiles.filter(x=>x.active!==false);
+ const customers=uniqueVals('customer'),pms=[...new Set([...uniqueVals('project_manager'),...people.map(x=>x.display_name).filter(Boolean)])].sort(),offices=uniqueVals('office');
+ const options=(arr)=>arr.map(x=>`<option value="${esc(x)}"></option>`).join('');
+ const html=`<div class="form-grid">
+  <div class="field"><label>Project Name</label><input id="mName"></div>
+  <div class="field"><label>Project / Job Number</label><input id="mJob"></div>
+  <div class="field"><label>Customer</label><input id="mCustomer" list="mCustomerList"><datalist id="mCustomerList">${options(customers)}</datalist></div>
+  <div class="field"><label>Project Manager</label><input id="mPM" list="mPMList"><datalist id="mPMList">${options(pms)}</datalist></div>
+  <div class="field"><label>Office</label><input id="mOffice" list="mOfficeList"><datalist id="mOfficeList">${options(offices)}</datalist></div>
+  <div class="field"><label>Status</label><select id="mStatus">${['Not Started','On Track','At Risk','Over Hours','On Hold','Completed'].map(x=>`<option>${x}</option>`).join('')}</select></div>
+  <div class="field"><label>Priority</label><select id="mPriority">${['Low','Normal','High','Urgent'].map(x=>`<option ${x==='Normal'?'selected':''}>${x}</option>`).join('')}</select></div>
+  <div class="field"><label>Start Date</label><input id="mStart" type="date"></div>
+  <div class="field"><label>Due Date</label><input id="mDue" type="date"></div>
+  <div class="span3"><b>Assigned Team Members</b><div class="check-list" id="mTeamList">${people.map(x=>`<label><input class="newProjectMember" type="checkbox" value="${x.id}"> ${esc(x.display_name||x.email)}${x.employee_id?' ('+esc(x.employee_id)+')':''}</label>`).join('')||'No active employees'}</div></div>
+  <div class="field span3"><label>Project Lead</label><select id="mLead"><option value="">No Project Lead</option></select></div>
+  <div class="span3 muted small"><b>Default phases will be created automatically:</b> 1. Project Setup through 10. As-Built / Closeout. Estimated Hours start at 0.00 and can be edited later in Project Setup.</div>
+ </div>`;
+ modal('New Project',html,async()=>{
+  const name=$('#mName').value.trim();if(!name)return alert('Project Name is required.');
+  if(state.projects.some(x=>String(x.name).toLowerCase()===name.toLowerCase()))return alert('This Project already exists.');
+  const memberIds=$$('.newProjectMember:checked').map(x=>x.value),lead=$('#mLead').value||'';
+  if(lead&&!memberIds.includes(lead))return alert('Project Lead must be one of the Assigned Team Members.');
+  const row={name,job_number:$('#mJob').value.trim(),customer:$('#mCustomer').value.trim(),project_manager:$('#mPM').value.trim(),office:$('#mOffice').value.trim(),current_phase:DEFAULT_PROJECT_PHASES[0],status:$('#mStatus').value,priority:$('#mPriority').value,start_date:$('#mStart').value||null,due_date:$('#mDue').value||null,overall_progress:0,original_hours:0,approved_co_hours:0,active:true,created_by:state.profile.id};
+  const r=await sb.from('projects').insert(row).select('id').single();if(r.error)return alert(r.error.message);const pid=r.data?.id;if(!pid)return alert('Project was created but no Project ID was returned.');
+  const ph=await sb.from('project_phase_budgets').insert(DEFAULT_PROJECT_PHASES.map((phase,i)=>({project_id:pid,phase,estimated_hours:0,sort_order:(i+1)*10})));if(ph.error)return alert('Project created, but default phases could not be created: '+ph.error.message);
+  if(memberIds.length){const a=await sb.from('project_members').upsert(memberIds.map(user_id=>({project_id:pid,user_id,role_in_project:user_id===lead?'lead':'member',assigned_by:state.profile.id})),{onConflict:'project_id,user_id'});if(a.error)return alert('Project created, but Team assignment could not be completed: '+a.error.message)}
+  closeModal();await loadAll();
+ });
+ const rebuildLead=()=>{const ids=$$('.newProjectMember:checked').map(x=>x.value),sel=$('#mLead'),old=sel.value;sel.innerHTML='<option value="">No Project Lead</option>'+people.filter(x=>ids.includes(x.id)).map(x=>`<option value="${x.id}">${esc(x.display_name||x.email)}${x.employee_id?' ('+esc(x.employee_id)+')':''}</option>`).join('');if(ids.includes(old))sel.value=old};
+ $$('.newProjectMember').forEach(x=>x.onchange=rebuildLead);rebuildLead();
+}
 async function archiveProject(id){if(!confirm('Delete/archive this Project? Historical time stays in Supabase.'))return;const {error}=await sb.from('projects').update({active:false}).eq('id',id);if(error)alert(error.message);else loadAll()}
 function teamModal(pid){const old=projectMembers(pid),selected=old.map(m=>m.user_id),currentLead=old.find(m=>String(m.role_in_project).toLowerCase()==='lead')?.user_id||'';const people=state.profiles.filter(p=>p.active!==false||selected.includes(p.id));const html=`<div class="field"><label>Project Lead</label><select id="teamLead"></select></div><div class="field" style="margin-top:12px"><label>Assigned Team Members</label><div class="check-list">${people.map(p=>`<label><input class="teamCheck" type="checkbox" value="${p.id}" ${selected.includes(p.id)?'checked':''}> ${esc(p.display_name||p.email)} ${p.employee_id?'('+esc(p.employee_id)+')':''}</label>`).join('')}</div></div><div class="muted small" style="margin-top:8px">Select all employees assigned to this Project. Project Lead must be one of the selected members.</div>`;modal('Manage Project Team',html,async()=>{const ids=$$('.teamCheck:checked').map(x=>x.value),lead=$('#teamLead').value||'';if(lead&&!ids.includes(lead))return alert('Project Lead must also be an Assigned Team Member.');for(const uid of ids.filter(x=>!old.some(m=>m.user_id===x))){const r=await sb.from('project_members').upsert({project_id:pid,user_id:uid,role_in_project:'member'},{onConflict:'project_id,user_id'});if(r.error)return alert(r.error.message)}for(const m of old.filter(x=>String(x.role_in_project).toLowerCase()==='lead'&&x.user_id!==lead&&ids.includes(x.user_id))){const r=await sb.from('project_members').update({role_in_project:'member'}).eq('project_id',pid).eq('user_id',m.user_id);if(r.error)return alert(r.error.message)}if(lead){const r=await sb.from('project_members').upsert({project_id:pid,user_id:lead,role_in_project:'lead'},{onConflict:'project_id,user_id'});if(r.error)return alert(r.error.message)}for(const m of old.filter(x=>!ids.includes(x.user_id))){const r=await sb.from('project_members').delete().eq('project_id',pid).eq('user_id',m.user_id);if(r.error)return alert(r.error.message)}closeModal();await loadAll()});const rebuild=()=>{const ids=$$('.teamCheck:checked').map(x=>x.value),sel=$('#teamLead'),prev=sel.value||currentLead;sel.innerHTML='<option value="">No Project Lead</option>'+people.filter(p=>ids.includes(p.id)).map(p=>`<option value="${p.id}">${esc(p.display_name||p.email)}${p.employee_id?' ('+esc(p.employee_id)+')':''}</option>`).join('');if(ids.includes(prev))sel.value=prev;else sel.value=''};$$('.teamCheck').forEach(x=>x.onchange=rebuild);rebuild()}
 function renderProjectTime(){const rows=state.projects;$('#jobsBody').innerHTML=`<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Project</th><th>Today</th><th>This Week</th><th>All Task Hours</th></tr></thead><tbody>${rows.map(p=>{const entries=state.timeEntries.filter(x=>x.project_id===p.id),today=entryHours(entries.filter(x=>String(x.started_at||'').slice(0,10)===isoDay())),week=entryHours(entries.filter(x=>new Date(x.started_at||0)>new Date(Date.now()-7*86400000)));return`<tr><td>${esc(p.name)}</td><td>${fmtTime(today)}</td><td>${fmtTime(week)}</td><td>${fmt(projectHours(p.id))}</td></tr>`}).join('')}</tbody></table></div></div>`}
@@ -265,7 +315,7 @@ function employeeModal(p=null){modal(p?'Edit Employee':'New Employee',`<div clas
 async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
 
 function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, All Tasks, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.7 Sync</p></div>`}
+function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, All Tasks, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.9 Project Creation Sync</p></div>`}
 
 async function bootstrapAuth(){
   try{
