@@ -21,7 +21,7 @@ const DEFAULT_PROJECT_PHASES = [
   '9. QC / Final Review',
   '10. As-Built / Closeout'
 ];
-const state={profile:null,page:'dashboard',jobsTab:'setup',tasksTab:'mine',attendanceTab:'live',setupProjectId:'',projects:[],tasks:[],profiles:[],members:[],assignees:[],timeEntries:[],phaseBudgets:[],changeOrders:[],devices:[],leaveRequests:[],shifts:[],specialDays:[],screenshots:[]};
+const state={profile:null,page:'dashboard',jobsTab:'setup',tasksTab:'mine',attendanceTab:'live',setupProjectId:'',projects:[],tasks:[],profiles:[],members:[],assignees:[],timeEntries:[],phaseBudgets:[],changeOrders:[],devices:[],leaveRequests:[],shifts:[],specialDays:[],screenshots:[],dailyProgress:[]};
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const num=v=>Number(v)||0; const fmt=v=>num(v).toFixed(2); const fmtTime=h=>`${Math.floor(num(h))}:${String(Math.round((num(h)%1)*60)).padStart(2,'0')}`;
@@ -37,9 +37,9 @@ function projectLink(p){if(!p)return '—';return canManageProject(p.id)?`<butto
 function openProjectSetup(pid){if(!canManageProject(pid))return;state.setupProjectId=pid;state.jobsTab='setup';state.page='jobs';$$('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page==='jobs'));$$('.page').forEach(p=>p.classList.add('hidden'));const target=$('#page-jobs');if(target)target.classList.remove('hidden');render()}
 function hookProjectOpenLinks(root=document){root.querySelectorAll('[data-open-project]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();openProjectSetup(b.dataset.openProject)})}
 async function safe(table,query='*'){try{const {data,error}=await sb.from(table).select(query);if(error)throw error;return data||[]}catch(e){console.warn(table,e);return[]}}
-async function loadAll(){setSync('Loading...');const [projects,tasks,profiles,members,assignees,timeEntries,phaseBudgets,changeOrders,devices,leaveRequests,shifts,specialDays,screenshots]=await Promise.all([
- safe('projects'),safe('tasks'),safe('profiles'),safe('project_members'),safe('task_assignees'),safe('time_entries'),safe('project_phase_budgets'),safe('change_orders'),safe('devices'),safe('leave_requests'),safe('work_shift_settings'),safe('special_work_days'),safe('screenshots')]);
- Object.assign(state,{projects:projects.filter(x=>x.active!==false),tasks:tasks.filter(x=>x.active!==false),profiles,members,assignees,timeEntries,phaseBudgets,changeOrders,devices,leaveRequests,shifts,specialDays,screenshots});setSync('Supabase ✓');render();}
+async function loadAll(){setSync('Loading...');const [projects,tasks,profiles,members,assignees,timeEntries,phaseBudgets,changeOrders,devices,leaveRequests,shifts,specialDays,screenshots,dailyProgress]=await Promise.all([
+ safe('projects'),safe('tasks'),safe('profiles'),safe('project_members'),safe('task_assignees'),safe('time_entries'),safe('project_phase_budgets'),safe('change_orders'),safe('devices'),safe('leave_requests'),safe('work_shift_settings'),safe('special_work_days'),safe('screenshots'),safe('task_progress_daily')]);
+ Object.assign(state,{projects:projects.filter(x=>x.active!==false),tasks:tasks.filter(x=>x.active!==false),profiles,members,assignees,timeEntries,phaseBudgets,changeOrders,devices,leaveRequests,shifts,specialDays,screenshots,dailyProgress});setSync('Supabase ✓');render();}
 function effectiveEntryHours(x){const now=Date.now();if(num(x.duration_seconds)>0)return num(x.duration_seconds)/3600;if(!x.started_at)return 0;const start=new Date(x.started_at).getTime();if(x.ended_at)return Math.max(0,(new Date(x.ended_at).getTime()-start)/3600000);let end=now;if(x.updated_at){const hb=new Date(x.updated_at).getTime();if(Number.isFinite(hb)&&now-hb>30000)end=hb}return Math.max(0,(end-start)/3600000)}
 function taskHours(tid){return state.timeEntries.filter(x=>x.task_id===tid).reduce((s,x)=>s+effectiveEntryHours(x),0)}
 function projectHours(pid){return state.tasks.filter(t=>t.project_id===pid).reduce((s,t)=>s+taskHours(t.id),0)}
@@ -212,46 +212,74 @@ function coModal(c=null){modal(c?'Edit Change Order':'New Change Order',`<div cl
 function approveCO(id){const c=state.changeOrders.find(x=>x.id===id);modal('Approve Change Order',`<div class="field"><label>Approved Hours</label><input id="apHours" type="number" min="0" step="0.25" value="${num(c?.approved_hours??c?.requested_hours)}"></div>`,async()=>{const h=num($('#apHours').value);const {error}=await sb.from('change_orders').update({approved_hours:h,status:'Approved'}).eq('id',id);if(error)return alert(error.message);closeModal();await loadAll()},'Approve')}
 async function setCOStatus(id,status){const {error}=await sb.from('change_orders').update({status}).eq('id',id);if(error)alert(error.message);else loadAll()} async function deleteCO(id){if(!confirm('Delete this Change Order?'))return;const {error}=await sb.from('change_orders').delete().eq('id',id);if(error)alert(error.message);else loadAll()}
 
-function renderProduction(){const rows=state.tasks;$('#page-production').innerHTML=`<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Project</th><th>Task</th><th>Trade</th><th>Area</th><th>Level</th><th>Phase</th><th>Sheet Count</th><th>Sheets Done</th><th>Spool Count</th><th>Spools Done</th><th>LF Total</th><th>LF Done</th><th>Progress</th></tr></thead><tbody>${rows.map(t=>{const total=num(t.sheet_count)+num(t.spool_count)+num(t.lf_total),done=num(t.sheets_done)+num(t.spools_done)+num(t.lf_done),pct=total?Math.min(100,done/total*100):0;return`<tr><td>${esc(pById(t.project_id)?.name||'—')}</td><td>${esc(t.name)}</td><td>${esc(t.trade||'—')}</td><td>${esc(t.area||'—')}</td><td>${esc(t.level||'—')}</td><td>${esc(t.phase||'—')}</td><td>${num(t.sheet_count)}</td><td>${num(t.sheets_done)}</td><td>${num(t.spool_count)}</td><td>${num(t.spools_done)}</td><td>${fmt(t.lf_total)}</td><td>${fmt(t.lf_done)}</td><td>${pct.toFixed(0)}%</td></tr>`}).join('')}</tbody></table></div></div>`}
+function renderProduction(){
+  const dateKey=v=>{
+    const d=new Date(v);
+    if(!Number.isFinite(d.getTime())) return '';
+    const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  };
+  const fmtDate=v=>{
+    if(!v)return '—';
+    const [y,m,d]=String(v).split('-');
+    return y&&m&&d?`${m}/${d}/${y}`:v;
+  };
+  const progressFor=(task,date)=>{
+    const exact=state.dailyProgress.find(x=>String(x.task_id)===String(task.id)&&String(x.progress_date||'').slice(0,10)===date);
+    if(exact)return Math.max(0,Math.min(100,num(exact.progress_percent)));
+    if(date===dateKey(new Date()))return Math.max(0,Math.min(100,num(task.progress_percent)));
+    return 0;
+  };
 
-async function signedShot(path){if(!path)return'';for(const bucket of ['screenshots','tracking-screenshots']){const {data,error}=await sb.storage.from(bucket).createSignedUrl(path,600);if(!error&&data?.signedUrl)return data.signedUrl}return''}
-function renderScreenshots(){const mine=state.screenshots.filter(s=>s.user_id===state.profile.id).sort((a,b)=>new Date(b.captured_at||0)-new Date(a.captured_at||0)).slice(0,100);$('#page-screenshots').innerHTML=`<div class="notice">Desktop screenshots are captured by the DDG Tracking desktop agent and synced to Supabase. The browser portal displays synced images.</div><div id="myShots" class="screenshot-grid"></div>`;drawShotCards(mine,$('#myShots'))}
-async function drawShotCards(shots,el){el.innerHTML=shots.length?'<div class="muted">Loading previews...</div>':'<div class="muted">No screenshots.</div>';if(!shots.length)return;const cards=[];for(const s of shots){const url=await signedShot(s.storage_path);cards.push(`<article class="shot-card" data-url="${esc(url)}"><div class="shot-thumb">${url?`<img src="${esc(url)}" loading="lazy">`:'Preview unavailable'}</div><div class="shot-meta"><b>${s.captured_at?new Date(s.captured_at).toLocaleString():'—'}</b><span>${esc(pById(s.project_id)?.name||'No project')} · ${esc(tById(s.task_id)?.name||'No task')}</span></div></article>`)}el.innerHTML=cards.join('');el.querySelectorAll('[data-url]').forEach(x=>x.onclick=()=>x.dataset.url&&window.open(x.dataset.url,'_blank'))}
+  const groups=new Map();
+  state.timeEntries.forEach(e=>{
+    if(!e.project_id||!e.task_id||!e.started_at)return;
+    const task=tById(e.task_id),project=pById(e.project_id);
+    if(!task||!project)return;
+    const date=dateKey(e.started_at);
+    if(!date)return;
+    const key=`${date}|${e.project_id}|${e.task_id}`;
+    let g=groups.get(key);
+    if(!g){g={date,project,task,hours:0,users:new Set()};groups.set(key,g)}
+    g.hours+=effectiveEntryHours(e);
+    if(e.user_id)g.users.add(e.user_id);
+  });
 
-function renderAttendance(){const el=$('#page-attendance');el.innerHTML=tabs([['live','Live Team'],['leave','Leave Requests'],['schedule','Work Schedule & Holidays'],['balance','Leave Balances']],state.attendanceTab)+`<div id="attendanceBody"></div>`;hookTabs(el,v=>state.attendanceTab=v);({live:drawLiveTeam,leave:drawLeave,schedule:drawSchedule,balance:drawBalances}[state.attendanceTab]||drawLiveTeam)()}
-function drawLiveTeam(){const now=Date.now(),today=new Date();const approved=state.leaveRequests.filter(l=>String(l.status).toLowerCase()==='approved'&&new Date(l.start_date)<=today&&new Date(l.end_date)>=today);$('#attendanceBody').innerHTML=`<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Employee ID</th><th>Role</th><th>Status</th><th>Project</th><th>Task</th><th>Device</th><th>Last Seen</th></tr></thead><tbody>${state.profiles.filter(p=>p.active!==false).map(p=>{const d=state.devices.filter(x=>x.user_id===p.id).sort((a,b)=>new Date(b.last_seen||0)-new Date(a.last_seen||0))[0],onLeave=approved.some(l=>l.user_id===p.id),recent=d&&now-new Date(d.last_seen||0).getTime()<5*60000,status=onLeave?'On Leave':!recent?'Absent / Offline':d.is_tracking?'Tracking':'Not Tracking';return`<tr><td>${esc(nameOf(p.id))}</td><td>${esc(p.employee_id||'—')}</td><td>${esc(p.role||'Employee')}</td><td><span class="live-dot ${status==='Tracking'?'green':status==='Absent / Offline'?'red':status==='On Leave'?'amber':'gray'}"></span>${status}</td><td>${esc(pById(d?.project_id)?.name||d?.project_name||'No project')}</td><td>${esc(tById(d?.task_id)?.name||d?.task_name||'No task')}</td><td>${esc(d?.device_name||'—')}</td><td>${d?.last_seen?new Date(d.last_seen).toLocaleString():'—'}</td></tr>`}).join('')}</tbody></table></div></div>`}
-function drawLeave(){
-  const canReview=roleIsManager();
-  const rows=state.leaveRequests.map(l=>{
-    const isPending=String(l.status||'').toLowerCase()==='pending';
-    const canEdit=l.user_id===state.profile.id&&isPending;
-    let actions='';
-    if(canEdit) actions+=`<button data-edit-leave="${esc(l.id)}">Edit</button>`;
-    if(canReview&&isPending){
-      actions+=`${actions?' ':''}<button class="success" data-approve-leave="${esc(l.id)}">Approve</button> <button class="danger" data-reject-leave="${esc(l.id)}">Reject</button>`;
-    }
-    return `<tr>
-      <td>${esc(nameOf(l.user_id))}</td>
-      <td>${esc(l.leave_type||'')}</td>
-      <td>${esc(l.start_date||'')}</td>
-      <td>${esc(l.end_date||'')}</td>
-      <td>${esc(l.portion||'')}</td>
-      <td>${esc(l.reason||'')}</td>
-      <td>${esc(l.status||'Pending')}</td>
-      <td>${esc(l.reviewer_comment||'')}</td>
-      <td>${actions}</td>
-    </tr>`;
-  }).join('');
-  $('#attendanceBody').innerHTML=`
-    <div class="toolbar"><button id="newLeave">+ New Leave Request</button></div>
-    <div class="card"><div class="table-wrap"><table class="table">
-      <thead><tr><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Portion</th><th>Reason</th><th>Status</th><th>Reviewer Comment</th><th>Actions</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></div></div>`;
-  $('#newLeave').onclick=()=>leaveModal();
-  $$('[data-edit-leave]').forEach(b=>b.onclick=()=>leaveModal(state.leaveRequests.find(x=>x.id===b.dataset.editLeave)));
-  $$('[data-approve-leave]').forEach(b=>b.onclick=()=>reviewLeave(b.dataset.approveLeave,'Approved'));
-  $$('[data-reject-leave]').forEach(b=>b.onclick=()=>reviewLeave(b.dataset.rejectLeave,'Rejected'));
+  const rows=[...groups.values()].sort((a,b)=>b.date.localeCompare(a.date)||String(a.project.name||'').localeCompare(String(b.project.name||''))||String(a.task.name||'').localeCompare(String(b.task.name||'')));
+  const total=rows.reduce((s,r)=>s+r.hours,0);
+  const rowHtml=rows.map(r=>`<tr>
+    <td>${esc(fmtDate(r.date))}</td>
+    <td>${esc(r.project.customer||'—')}</td>
+    <td>${esc(r.project.office||'—')}</td>
+    <td>${projectLink(r.project)}</td>
+    <td>${esc(r.task.phase||'—')}</td>
+    <td>${esc(r.task.level||'—')}</td>
+    <td>${esc(r.task.building||'—')}</td>
+    <td>${esc(r.task.system_name||'—')}</td>
+    <td>${esc(r.task.name||'—')}</td>
+    <td>${esc([...r.users].map(nameOf).filter(Boolean).join(', ')||'—')}</td>
+    <td>${progressFor(r.task,r.date).toFixed(0)}%</td>
+    <td>${fmtTime(r.hours)}</td>
+    <td>${fmtTime(r.hours)}</td>
+    <td>0:00</td>
+    <td>0:00</td>
+    <td>0:00</td>
+  </tr>`).join('');
+
+  $('#page-production').innerHTML=`
+    <div class="grid kpis" style="grid-template-columns:repeat(6,minmax(130px,1fr));margin-bottom:12px">
+      ${[['Rows',rows.length],['Total',fmt(total)],['Regular Time',fmt(total)],['Overtime','0.00'],['Additional In Scope','0.00'],['Additional Out of Scope','0.00']].map(x=>`<div class="kpi"><div class="label">${x[0]}</div><div class="value">${x[1]}</div></div>`).join('')}
+    </div>
+    <div class="card">
+      <div class="section-title">Daily Task Progress</div>
+      <div class="muted small" style="margin-bottom:10px">Read-only report. Edit Task metadata in Tasks.</div>
+      <div class="table-wrap"><table class="table production-daily-table">
+        <thead><tr>
+          <th>Date</th><th>Customer</th><th>Group</th><th>Project</th><th>Phase</th><th>Level</th><th>Building</th><th>System</th><th>Task</th><th>Detailers</th><th>% Completed</th><th>Total</th><th>Regular</th><th>OT</th><th>Additional In</th><th>Additional Out</th>
+        </tr></thead>
+        <tbody>${rowHtml}</tbody>
+      </table></div>
+    </div>`;
 }
 
 function leaveModal(l=null){const ent=num(state.profile.annual_leave_days),used=usedLeave(state.profile.id);modal(l?'Edit Leave Request':'New Leave Request',`<div class="notice">Annual Leave: Entitlement ${fmt(ent)} · Used ${fmt(used)} · Remaining ${fmt(Math.max(0,ent-used))}</div><div class="form-grid"><div class="field"><label>Leave Type</label><select id="lvType">${['Annual Leave','Unpaid Leave','Sick Leave','Other'].map(x=>`<option ${l?.leave_type===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Start Date</label><input id="lvStart" type="date" value="${esc(l?.start_date||isoDay())}"></div><div class="field"><label>End Date</label><input id="lvEnd" type="date" value="${esc(l?.end_date||isoDay())}"></div><div class="field"><label>Portion</label><select id="lvPortion">${['Full Day','Morning Half','Afternoon Half'].map(x=>`<option ${l?.portion===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field span3"><label>Reason</label><textarea id="lvReason">${esc(l?.reason||'')}</textarea></div></div>`,async()=>{const row={user_id:state.profile.id,leave_type:$('#lvType').value,start_date:$('#lvStart').value,end_date:$('#lvEnd').value,portion:$('#lvPortion').value,reason:$('#lvReason').value.trim(),status:'Pending'};const r=l?await sb.from('leave_requests').update(row).eq('id',l.id):await sb.from('leave_requests').insert(row);if(r.error)return alert(r.error.message);closeModal();await loadAll()})}
@@ -357,7 +385,7 @@ function employeeModal(p=null){modal(p?'Edit Employee':'New Employee',`<div clas
 async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
 
 function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, All Tasks, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.11 Project Drill-down</p></div>`}
+function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, All Tasks, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.13 Production Sync</p></div>`}
 
 async function bootstrapAuth(){
   try{

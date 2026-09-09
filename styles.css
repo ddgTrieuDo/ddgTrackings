@@ -17,3 +17,22 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 
 .project-link{background:transparent;border:0;padding:0;margin:0;color:#0b5bd3;font:inherit;font-weight:600;cursor:pointer;text-align:left}
 .project-link:hover{text-decoration:underline}
+
+/* Web 4.13 - Production columns synchronized with Desktop Daily Task Progress */
+.production-daily-table{min-width:1530px;table-layout:fixed}
+.production-daily-table th:nth-child(1),.production-daily-table td:nth-child(1){width:86px}
+.production-daily-table th:nth-child(2),.production-daily-table td:nth-child(2){width:92px}
+.production-daily-table th:nth-child(3),.production-daily-table td:nth-child(3){width:64px}
+.production-daily-table th:nth-child(4),.production-daily-table td:nth-child(4){width:150px}
+.production-daily-table th:nth-child(5),.production-daily-table td:nth-child(5){width:145px}
+.production-daily-table th:nth-child(6),.production-daily-table td:nth-child(6){width:64px}
+.production-daily-table th:nth-child(7),.production-daily-table td:nth-child(7){width:82px}
+.production-daily-table th:nth-child(8),.production-daily-table td:nth-child(8){width:108px}
+.production-daily-table th:nth-child(9),.production-daily-table td:nth-child(9){width:160px}
+.production-daily-table th:nth-child(10),.production-daily-table td:nth-child(10){width:165px}
+.production-daily-table th:nth-child(11),.production-daily-table td:nth-child(11){width:108px;white-space:nowrap}
+.production-daily-table th:nth-child(12),.production-daily-table td:nth-child(12){width:74px}
+.production-daily-table th:nth-child(13),.production-daily-table td:nth-child(13){width:82px}
+.production-daily-table th:nth-child(14),.production-daily-table td:nth-child(14){width:58px}
+.production-daily-table th:nth-child(15),.production-daily-table td:nth-child(15){width:112px;white-space:nowrap}
+.production-daily-table th:nth-child(16),.production-daily-table td:nth-child(16){width:120px;white-space:nowrap}
