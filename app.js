@@ -257,23 +257,57 @@ function drawLeave(){
 function leaveModal(l=null){const ent=num(state.profile.annual_leave_days),used=usedLeave(state.profile.id);modal(l?'Edit Leave Request':'New Leave Request',`<div class="notice">Annual Leave: Entitlement ${fmt(ent)} · Used ${fmt(used)} · Remaining ${fmt(Math.max(0,ent-used))}</div><div class="form-grid"><div class="field"><label>Leave Type</label><select id="lvType">${['Annual Leave','Unpaid Leave','Sick Leave','Other'].map(x=>`<option ${l?.leave_type===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Start Date</label><input id="lvStart" type="date" value="${esc(l?.start_date||isoDay())}"></div><div class="field"><label>End Date</label><input id="lvEnd" type="date" value="${esc(l?.end_date||isoDay())}"></div><div class="field"><label>Portion</label><select id="lvPortion">${['Full Day','Morning Half','Afternoon Half'].map(x=>`<option ${l?.portion===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field span3"><label>Reason</label><textarea id="lvReason">${esc(l?.reason||'')}</textarea></div></div>`,async()=>{const row={user_id:state.profile.id,leave_type:$('#lvType').value,start_date:$('#lvStart').value,end_date:$('#lvEnd').value,portion:$('#lvPortion').value,reason:$('#lvReason').value.trim(),status:'Pending'};const r=l?await sb.from('leave_requests').update(row).eq('id',l.id):await sb.from('leave_requests').insert(row);if(r.error)return alert(r.error.message);closeModal();await loadAll()})}
 function reviewLeave(id,status){modal(`${status} Leave Request`,`<div class="field"><label>Reviewer Comment</label><textarea id="reviewComment"></textarea></div>`,async()=>{const {error}=await sb.from('leave_requests').update({status,reviewer_comment:$('#reviewComment').value.trim()}).eq('id',id);if(error)return alert(error.message);closeModal();await loadAll()},status)}
 function usedLeave(uid){const y=new Date().getFullYear();return state.leaveRequests.filter(l=>l.user_id===uid&&String(l.status).toLowerCase()==='approved'&&String(l.leave_type||'').toLowerCase().includes('annual')&&new Date(l.start_date).getFullYear()===y).reduce((s,l)=>{if(String(l.portion).toLowerCase().includes('half'))return s+.5;let a=new Date(l.start_date),b=new Date(l.end_date),n=0;while(a<=b){if(![0,6].includes(a.getDay()))n++;a.setDate(a.getDate()+1)}return s+Math.max(1,n)},0)}
+function defaultWeekShifts(){
+  return [
+    {day_of_week:1,is_workday:true,morning_start:'07:30',morning_end:'12:00',afternoon_start:'13:00',afternoon_end:'17:30',ot_start:'18:30',ot_end:'23:30'},
+    {day_of_week:2,is_workday:true,morning_start:'07:30',morning_end:'12:00',afternoon_start:'13:00',afternoon_end:'17:30',ot_start:'18:30',ot_end:'23:30'},
+    {day_of_week:3,is_workday:true,morning_start:'07:30',morning_end:'12:00',afternoon_start:'13:00',afternoon_end:'17:30',ot_start:'18:30',ot_end:'23:30'},
+    {day_of_week:4,is_workday:true,morning_start:'07:30',morning_end:'12:00',afternoon_start:'13:00',afternoon_end:'17:30',ot_start:'18:30',ot_end:'23:30'},
+    {day_of_week:5,is_workday:true,morning_start:'07:30',morning_end:'12:00',afternoon_start:'13:00',afternoon_end:'17:30',ot_start:'18:30',ot_end:'23:30'},
+    {day_of_week:6,is_workday:true,morning_start:'07:30',morning_end:'12:00',afternoon_start:'13:00',afternoon_end:'17:30',ot_start:'18:30',ot_end:'23:30'},
+    {day_of_week:7,is_workday:false,morning_start:null,morning_end:null,afternoon_start:null,afternoon_end:null,ot_start:null,ot_end:null}
+  ];
+}
+async function setDefaultWeek(){
+  if(!roleIsManager()) return;
+  const replacing=state.shifts.length>0;
+  const msg=replacing
+    ? 'Replace the current Weekly Work Shift with the DDG default schedule?'
+    : 'Create the DDG default Weekly Work Shift?\n\nMonday-Saturday: 07:30-12:00 / 13:00-17:30 / OT 18:30-23:30\nSunday: Off';
+  if(!confirm(msg)) return;
+  const {error}=await sb.from('work_shift_settings').upsert(defaultWeekShifts(),{onConflict:'day_of_week'});
+  if(error) return alert(error.message);
+  await loadAll();
+}
 function drawSchedule(){
   if(!roleIsManager()){
     $('#attendanceBody').innerHTML='<div class="notice">Admin/Manager access required.</div>';
     return;
   }
-  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const shiftRows=days.map((d,i)=>{
-    const sh=state.shifts.find(x=>num(x.day_of_week)===i)||{};
+
+  // Keep the same day numbering as the Desktop App and the database:
+  // 1=Monday ... 7=Sunday.
+  const days=[
+    [1,'Monday'],[2,'Tuesday'],[3,'Wednesday'],[4,'Thursday'],
+    [5,'Friday'],[6,'Saturday'],[7,'Sunday']
+  ];
+  const defaults=defaultWeekShifts();
+
+  const shiftRows=days.map(([dayNo,dayName])=>{
+    const sh=state.shifts.find(x=>num(x.day_of_week)===dayNo)
+      || defaults.find(x=>num(x.day_of_week)===dayNo)
+      || {};
+    const range=(a,b)=>(a||b)?`${a||''} - ${b||''}`:'—';
     return `<tr>
-      <td>${esc(d)}</td>
+      <td>${esc(dayName)}</td>
       <td>${sh.is_workday===false?'Off':'Workday'}</td>
-      <td>${esc((sh.morning_start||'')+' - '+(sh.morning_end||''))}</td>
-      <td>${esc((sh.afternoon_start||'')+' - '+(sh.afternoon_end||''))}</td>
-      <td>${esc((sh.ot_start||'')+' - '+(sh.ot_end||''))}</td>
-      <td><button data-shift-day="${i}">Edit</button></td>
+      <td>${esc(range(sh.morning_start,sh.morning_end))}</td>
+      <td>${esc(range(sh.afternoon_start,sh.afternoon_end))}</td>
+      <td>${esc(range(sh.ot_start,sh.ot_end))}</td>
+      <td><button data-shift-day="${dayNo}">Edit</button></td>
     </tr>`;
   }).join('');
+
   const specialRows=state.specialDays.map(sp=>`<tr>
       <td>${esc(sp.work_date)}</td>
       <td>${esc(sp.name||'')}</td>
@@ -283,11 +317,15 @@ function drawSchedule(){
       <td>${esc((sp.ot_start||'')+' - '+(sp.ot_end||''))}</td>
       <td><button data-edit-special="${esc(sp.id)}">Edit</button> <button class="danger" data-del-special="${esc(sp.id)}">Delete</button></td>
     </tr>`).join('');
+
   $('#attendanceBody').innerHTML=`
     <div class="card">
-      <div class="section-title">Weekly Work Schedule</div>
+      <div class="toolbar">
+        <div class="section-title grow">Weekly Work Shift</div>
+        <button id="setDefaultWeek">+ Set Default Week</button>
+      </div>
       <div class="table-wrap"><table class="table">
-        <thead><tr><th>Day</th><th>Workday</th><th>Morning</th><th>Afternoon</th><th>OT</th><th>Action</th></tr></thead>
+        <thead><tr><th>Day</th><th>Work Day</th><th>Morning</th><th>Afternoon</th><th>OT</th><th>Action</th></tr></thead>
         <tbody>${shiftRows}</tbody>
       </table></div>
     </div>
@@ -298,13 +336,14 @@ function drawSchedule(){
         <tbody>${specialRows}</tbody>
       </table></div>
     </div>`;
+
+  $('#setDefaultWeek').onclick=setDefaultWeek;
   $$('[data-shift-day]').forEach(b=>b.onclick=()=>shiftModal(num(b.dataset.shiftDay)));
   $('#addSpecial').onclick=()=>specialDayModal();
   $$('[data-edit-special]').forEach(b=>b.onclick=()=>specialDayModal(state.specialDays.find(x=>x.id===b.dataset.editSpecial)));
   $$('[data-del-special]').forEach(b=>b.onclick=()=>deleteSpecial(b.dataset.delSpecial));
 }
-
-function shiftModal(day){const s=state.shifts.find(x=>num(x.day_of_week)===day)||{};modal('Edit Work Schedule',`<div class="form-grid"><div class="field"><label>Workday</label><select id="shWork"><option value="true" ${s.is_workday!==false?'selected':''}>Workday</option><option value="false" ${s.is_workday===false?'selected':''}>Off</option></select></div>${[['Morning Start','morning_start'],['Morning End','morning_end'],['Afternoon Start','afternoon_start'],['Afternoon End','afternoon_end'],['OT Start','ot_start'],['OT End','ot_end']].map(([l,k])=>`<div class="field"><label>${l}</label><input id="${k}" type="time" value="${esc(s[k]||'')}"></div>`).join('')}</div>`,async()=>{const row={day_of_week:day,is_workday:$('#shWork').value==='true',morning_start:$('#morning_start').value||null,morning_end:$('#morning_end').value||null,afternoon_start:$('#afternoon_start').value||null,afternoon_end:$('#afternoon_end').value||null,ot_start:$('#ot_start').value||null,ot_end:$('#ot_end').value||null};const {error}=await sb.from('work_shift_settings').upsert(row,{onConflict:'day_of_week'});if(error)return alert(error.message);closeModal();await loadAll()})}
+function shiftModal(day){const s=state.shifts.find(x=>num(x.day_of_week)===day)||defaultWeekShifts().find(x=>num(x.day_of_week)===day)||{};modal('Edit Work Schedule',`<div class="form-grid"><div class="field"><label>Workday</label><select id="shWork"><option value="true" ${s.is_workday!==false?'selected':''}>Workday</option><option value="false" ${s.is_workday===false?'selected':''}>Off</option></select></div>${[['Morning Start','morning_start'],['Morning End','morning_end'],['Afternoon Start','afternoon_start'],['Afternoon End','afternoon_end'],['OT Start','ot_start'],['OT End','ot_end']].map(([l,k])=>`<div class="field"><label>${l}</label><input id="${k}" type="time" value="${esc(s[k]||'')}"></div>`).join('')}</div>`,async()=>{const row={day_of_week:day,is_workday:$('#shWork').value==='true',morning_start:$('#morning_start').value||null,morning_end:$('#morning_end').value||null,afternoon_start:$('#afternoon_start').value||null,afternoon_end:$('#afternoon_end').value||null,ot_start:$('#ot_start').value||null,ot_end:$('#ot_end').value||null};const {error}=await sb.from('work_shift_settings').upsert(row,{onConflict:'day_of_week'});if(error)return alert(error.message);closeModal();await loadAll()})}
 function specialDayModal(s=null){modal(s?'Edit Special Day':'Add Special Day',`<div class="form-grid"><div class="field"><label>Date</label><input id="sdDate" type="date" value="${esc(s?.work_date||isoDay())}"></div><div class="field"><label>Name</label><input id="sdName" value="${esc(s?.name||'')}"></div><div class="field"><label>Type</label><select id="sdWork"><option value="false" ${s?.is_workday?'':'selected'}>Holiday</option><option value="true" ${s?.is_workday?'selected':''}>Special Workday</option></select></div></div>`,async()=>{const row={work_date:$('#sdDate').value,name:$('#sdName').value.trim(),is_workday:$('#sdWork').value==='true'};const r=s?await sb.from('special_work_days').update(row).eq('id',s.id):await sb.from('special_work_days').upsert(row,{onConflict:'work_date'});if(r.error)return alert(r.error.message);closeModal();await loadAll()})} async function deleteSpecial(id){if(!confirm('Delete this day?'))return;const {error}=await sb.from('special_work_days').delete().eq('id',id);if(error)alert(error.message);else loadAll()}
 function drawBalances(){if(!roleIsManager()){$('#attendanceBody').innerHTML='<div class="notice">Admin/Manager access required.</div>';return}$('#attendanceBody').innerHTML=`<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Employee ID</th><th>Annual Entitlement</th><th>Used</th><th>Remaining</th><th>Action</th></tr></thead><tbody>${state.profiles.filter(p=>p.active!==false).map(p=>{const e=num(p.annual_leave_days),u=usedLeave(p.id);return`<tr><td>${esc(nameOf(p.id))}</td><td>${esc(p.employee_id||'—')}</td><td>${fmt(e)}</td><td>${fmt(u)}</td><td>${fmt(Math.max(0,e-u))}</td><td><button data-leave-bal="${p.id}">Edit</button></td></tr>`}).join('')}</tbody></table></div></div>`;$$('[data-leave-bal]').forEach(b=>b.onclick=()=>leaveBalanceModal(b.dataset.leaveBal))}
 function leaveBalanceModal(uid){const p=prof(uid);modal('Annual Leave Entitlement',`<div class="field"><label>${esc(nameOf(uid))}</label><input id="leaveEnt" type="number" min="0" step="0.5" value="${num(p?.annual_leave_days)}"></div>`,async()=>{const {error}=await sb.from('profiles').update({annual_leave_days:num($('#leaveEnt').value)}).eq('id',uid);if(error)return alert(error.message);closeModal();await loadAll()})}
