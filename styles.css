@@ -149,3 +149,111 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 #page-tasks .table tbody tr.selected td{background:#2f6fed;color:#fff}
 #page-tasks .table tbody tr:hover td{background:#f7faff}
 @media(max-width:1000px){.app-task-layout{grid-template-columns:1fr}.task-cards-head{flex-direction:column;align-items:stretch}.task-cards-head .field{min-width:0}.task-card-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}}
+
+/* Web 4.19 - Consistent interactive states across the entire web app */
+button{
+  transition:background-color .16s ease,border-color .16s ease,color .16s ease,box-shadow .16s ease,transform .16s ease;
+}
+button:not(:disabled):hover{
+  background:#f8fafc;
+  color:#1d2939;
+}
+button:focus-visible{
+  outline:2px solid #84adff;
+  outline-offset:2px;
+}
+button:disabled,
+button[disabled]{
+  opacity:1;
+  cursor:not-allowed;
+  background:#f2f4f7 !important;
+  border-color:#d0d5dd !important;
+  color:#667085 !important;
+  box-shadow:none !important;
+  transform:none !important;
+}
+button.primary,
+.primary{
+  background:var(--blue);
+  border-color:var(--blue);
+  color:#fff;
+}
+button.primary:not(:disabled):hover,
+.primary:not(:disabled):hover{
+  background:#245fd6;
+  border-color:#245fd6;
+  color:#fff;
+}
+button.primary:active:not(:disabled),
+.primary:active:not(:disabled){
+  background:#1f56c2;
+  border-color:#1f56c2;
+  color:#fff;
+}
+button.primary:disabled,
+.primary:disabled{
+  background:#e4e7ec !important;
+  border-color:#d0d5dd !important;
+  color:#667085 !important;
+}
+button.danger{
+  background:#fff;
+  border-color:#ff99a5;
+  color:var(--red);
+}
+button.danger:not(:disabled):hover{
+  background:#fff1f3;
+  border-color:#f97080;
+  color:#c92a3a;
+}
+button.success{
+  background:#fff;
+  border-color:#8bd9be;
+  color:#087f5b;
+}
+button.success:not(:disabled):hover{
+  background:#ecfdf6;
+  border-color:#6bc8a8;
+  color:#067053;
+}
+.nav-btn:not(:disabled):hover,
+.nav-btn.active,
+.nav-btn.active:not(:disabled):hover{
+  background:#2f6fed;
+  color:#fff;
+}
+.tab-btn:not(:disabled):hover{
+  background:#edf3ff;
+  color:#245ae8;
+}
+.tab-btn.active,
+.tab-btn.active:not(:disabled):hover{
+  background:#dfe8ff;
+  color:#245ae8;
+}
+.project-link:not(:disabled):hover{
+  background:transparent;
+  color:#0b5bd3;
+}
+.task-project-item:not(:disabled):hover{
+  background:#eef4ff;
+  color:#245ae8;
+}
+.task-project-item.active,
+.task-project-item.active:not(:disabled):hover{
+  background:#e4ecff;
+  color:#245ae8;
+}
+/* Keep selected rows readable when hovered. */
+.table tbody tr.selected:hover td,
+#page-tasks .table tbody tr.selected:hover td{
+  background:#2f6fed;
+  color:#fff;
+}
+/* Keep labels and text readable on all action buttons. */
+.management-actions button,
+.toolbar button,
+.modal-actions button,
+.head-actions button{
+  font-weight:600;
+}
