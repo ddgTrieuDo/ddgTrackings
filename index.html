@@ -272,7 +272,36 @@ button.success:not(:disabled):hover{
       .task-management-all th:first-child,.task-management-all td:first-child{width:150px}
 
 
-/* Web 4.25 · Click Handlers Fix</style>
+/* Web 4.26 · Global No-Overlap Fix
+/* Web 4.26 - global no-overlap / responsive table safety */
+*{box-sizing:border-box}
+.main,.page,.card,.toolbar,.field,.grid>*{min-width:0}
+button,.btn,.nav-btn{flex-shrink:0}
+.toolbar,.head-actions,.actions,.modal-actions{flex-wrap:wrap}
+.field input,.field select,.field textarea{max-width:100%;min-width:0}
+.section-title,.kpi .label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table-wrap{max-width:100%;overflow-x:auto!important;overflow-y:auto;scrollbar-gutter:stable;border-radius:8px}
+.table{width:max-content!important;min-width:100%!important;table-layout:auto!important}
+.table th,.table td{box-sizing:border-box;min-width:72px;max-width:340px;white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+.table th{height:34px;line-height:1.2}
+.table td{height:32px}
+.table th button,.table td button{max-width:100%;white-space:nowrap}
+.table td .actions{min-width:150px;white-space:normal}
+.progressbar{max-width:100%;min-width:54px}
+.grid.three-col{grid-template-columns:repeat(3,minmax(340px,1fr));align-items:stretch}
+.grid.three-col>.card{min-width:340px}
+#page-dashboard .grid.three-col .table{min-width:100%!important}
+#page-dashboard .grid.three-col .table th,#page-dashboard .grid.three-col .table td{min-width:74px;max-width:190px}
+#page-dashboard .grid.three-col .section-title{padding-right:4px}
+#page-dashboard .kpis{grid-template-columns:repeat(6,minmax(150px,1fr))}
+.task-management-table th,.task-management-table td{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.production-daily-table th,.production-daily-table td{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+#page-employees .table th:nth-child(4),#page-employees .table td:nth-child(4){min-width:210px}
+#page-employees .table th:last-child,#page-employees .table td:last-child{min-width:150px;max-width:none}
+@media(max-width:1300px){#page-dashboard .kpis{grid-template-columns:repeat(3,minmax(150px,1fr))}.grid.three-col{grid-template-columns:1fr}.grid.three-col>.card{min-width:0}.table th,.table td{max-width:280px}}
+@media(max-width:760px){#page-dashboard .kpis{grid-template-columns:repeat(2,minmax(130px,1fr))}.table th,.table td{max-width:220px}}
+
+</style>
 </head>
 <body>
 <div id="app">
@@ -281,7 +310,7 @@ button.success:not(:disabled):hover{
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.25 · Click Handlers Fix</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.26 · Global No-Overlap Fix</div>
     </div>
   </section>
 
@@ -845,7 +874,7 @@ button.success:not(:disabled):hover{
       async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
       
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.20 GitHub Single File Fix</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.26 Global No-Overlap Fix</p></div>`}
       
       async function bootstrapAuth(){
         try{
