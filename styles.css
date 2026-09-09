@@ -81,3 +81,29 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 .all-tasks-table th:nth-child(14),.all-tasks-table td:nth-child(14){width:96px}
 .all-tasks-table th:nth-child(15),.all-tasks-table td:nth-child(15){width:118px}
 .all-tasks-table th:nth-child(16),.all-tasks-table td:nth-child(16){width:110px}
+
+
+/* Web 4.17 - Tasks tabs matched closer to Desktop app */
+.app-task-section h2{margin:10px 0 18px;font-size:18px}
+.app-task-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:36px;align-items:start}
+.task-project-column{display:flex;flex-direction:column;gap:12px;min-height:520px}
+.task-project-list{display:flex;flex-direction:column;gap:6px;min-height:360px;max-height:460px;overflow:auto;padding-right:4px}
+.task-project-item{width:100%;text-align:left;border:0;background:transparent;padding:12px 10px;border-radius:8px;font-size:14px;color:var(--text)}
+.task-project-item:hover{background:#f3f6fb}
+.task-project-item.active{background:#e8eeff;color:#1e5bea;font-weight:700}
+.task-cards-column{min-width:0}
+.task-cards-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:12px}
+.task-cards-head .field{min-width:240px}
+.task-card-stack{display:flex;flex-direction:column;gap:12px}
+.task-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;box-shadow:var(--shadow)}
+.task-card.mine{border-color:#c6d7ff;box-shadow:0 0 0 1px #dbe6ff}
+.task-card-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:10px}
+.task-card-name{font-weight:800;font-size:15px;margin-bottom:4px}
+.task-card-meta{font-size:12px;color:var(--muted)}
+.task-card-grid{display:grid;grid-template-columns:repeat(4,minmax(90px,1fr));gap:10px;margin-bottom:10px;font-size:12px}
+.task-card-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px}
+.task-project-picker{max-width:420px}
+.management-board{padding:18px 14px 14px}
+.management-actions{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.management-note{margin-top:10px}
+@media(max-width:1000px){.app-task-layout{grid-template-columns:1fr}.task-project-column{min-height:auto}.task-cards-head{flex-direction:column;align-items:stretch}.task-card-grid{grid-template-columns:repeat(2,1fr)}}
