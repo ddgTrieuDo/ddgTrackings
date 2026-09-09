@@ -270,6 +270,52 @@ button.success:not(:disabled):hover{
       /* Web 4.21 - Task Management All Projects */
       .task-management-all{min-width:1580px}
       .task-management-all th:first-child,.task-management-all td:first-child{width:150px}
+
+
+/* Web 4.22 - Task Management All columns no-overlap */
+.task-management-table{
+  table-layout:fixed;
+  width:max-content;
+}
+.task-management-table th,
+.task-management-table td{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  vertical-align:middle;
+}
+/* Specific project mode: 11 columns */
+.task-management-table:not(.task-management-all){min-width:1460px}
+.task-management-table:not(.task-management-all) th:nth-child(1),.task-management-table:not(.task-management-all) td:nth-child(1){width:240px}
+.task-management-table:not(.task-management-all) th:nth-child(2),.task-management-table:not(.task-management-all) td:nth-child(2){width:108px}
+.task-management-table:not(.task-management-all) th:nth-child(3),.task-management-table:not(.task-management-all) td:nth-child(3){width:170px}
+.task-management-table:not(.task-management-all) th:nth-child(4),.task-management-table:not(.task-management-all) td:nth-child(4){width:100px}
+.task-management-table:not(.task-management-all) th:nth-child(5),.task-management-table:not(.task-management-all) td:nth-child(5){width:72px}
+.task-management-table:not(.task-management-all) th:nth-child(6),.task-management-table:not(.task-management-all) td:nth-child(6){width:94px}
+.task-management-table:not(.task-management-all) th:nth-child(7),.task-management-table:not(.task-management-all) td:nth-child(7){width:112px}
+.task-management-table:not(.task-management-all) th:nth-child(8),.task-management-table:not(.task-management-all) td:nth-child(8){width:100px}
+.task-management-table:not(.task-management-all) th:nth-child(9),.task-management-table:not(.task-management-all) td:nth-child(9){width:118px}
+.task-management-table:not(.task-management-all) th:nth-child(10),.task-management-table:not(.task-management-all) td:nth-child(10){width:280px}
+.task-management-table:not(.task-management-all) th:nth-child(11),.task-management-table:not(.task-management-all) td:nth-child(11){width:72px}
+/* All mode: 12 columns. Project shifts every following nth-child by one. */
+.task-management-all{min-width:1720px}
+.task-management-all th:nth-child(1),.task-management-all td:nth-child(1){width:150px} /* Project */
+.task-management-all th:nth-child(2),.task-management-all td:nth-child(2){width:190px} /* Task */
+.task-management-all th:nth-child(3),.task-management-all td:nth-child(3){width:108px} /* Status */
+.task-management-all th:nth-child(4),.task-management-all td:nth-child(4){width:170px} /* Phase */
+.task-management-all th:nth-child(5),.task-management-all td:nth-child(5){width:100px} /* Trade */
+.task-management-all th:nth-child(6),.task-management-all td:nth-child(6){width:72px}  /* Level */
+.task-management-all th:nth-child(7),.task-management-all td:nth-child(7){width:94px}  /* Building */
+.task-management-all th:nth-child(8),.task-management-all td:nth-child(8){width:112px} /* System */
+.task-management-all th:nth-child(9),.task-management-all td:nth-child(9){width:100px} /* % Complete */
+.task-management-all th:nth-child(10),.task-management-all td:nth-child(10){width:118px} /* Tracked Hours */
+.task-management-all th:nth-child(11),.task-management-all td:nth-child(11){width:310px} /* Assignees */
+.task-management-all th:nth-child(12),.task-management-all td:nth-child(12){width:72px}  /* People */
+#page-tasks .management-board .table-wrap{
+  overflow-x:auto;
+  overflow-y:auto;
+}
+
 </style>
 </head>
 <body>
@@ -279,7 +325,7 @@ button.success:not(:disabled):hover{
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.20 · GitHub Single File Fix</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.22 · Task Columns Fix</div>
     </div>
   </section>
 
