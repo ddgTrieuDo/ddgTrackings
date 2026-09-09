@@ -36,3 +36,48 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 .production-daily-table th:nth-child(14),.production-daily-table td:nth-child(14){width:58px}
 .production-daily-table th:nth-child(15),.production-daily-table td:nth-child(15){width:112px;white-space:nowrap}
 .production-daily-table th:nth-child(16),.production-daily-table td:nth-child(16){width:120px;white-space:nowrap}
+
+
+/* Web 4.16 - Tasks page synchronized closer to Desktop app */
+.task-management-table{min-width:1460px;table-layout:fixed}
+.task-management-table th:nth-child(1),.task-management-table td:nth-child(1){width:240px}
+.task-management-table th:nth-child(2),.task-management-table td:nth-child(2){width:104px}
+.task-management-table th:nth-child(3),.task-management-table td:nth-child(3){width:145px}
+.task-management-table th:nth-child(4),.task-management-table td:nth-child(4){width:88px}
+.task-management-table th:nth-child(5),.task-management-table td:nth-child(5){width:70px}
+.task-management-table th:nth-child(6),.task-management-table td:nth-child(6){width:92px}
+.task-management-table th:nth-child(7),.task-management-table td:nth-child(7){width:110px}
+.task-management-table th:nth-child(8),.task-management-table td:nth-child(8){width:92px}
+.task-management-table th:nth-child(9),.task-management-table td:nth-child(9){width:110px}
+.task-management-table th:nth-child(10),.task-management-table td:nth-child(10){width:260px}
+.task-management-table th:nth-child(11),.task-management-table td:nth-child(11){width:68px}
+.my-tasks-table{min-width:1660px;table-layout:fixed}
+.my-tasks-table th:nth-child(1),.my-tasks-table td:nth-child(1){width:160px}
+.my-tasks-table th:nth-child(2),.my-tasks-table td:nth-child(2){width:220px}
+.my-tasks-table th:nth-child(3),.my-tasks-table td:nth-child(3){width:104px}
+.my-tasks-table th:nth-child(4),.my-tasks-table td:nth-child(4){width:145px}
+.my-tasks-table th:nth-child(5),.my-tasks-table td:nth-child(5){width:88px}
+.my-tasks-table th:nth-child(6),.my-tasks-table td:nth-child(6){width:70px}
+.my-tasks-table th:nth-child(7),.my-tasks-table td:nth-child(7){width:92px}
+.my-tasks-table th:nth-child(8),.my-tasks-table td:nth-child(8){width:110px}
+.my-tasks-table th:nth-child(9),.my-tasks-table td:nth-child(9){width:92px}
+.my-tasks-table th:nth-child(10),.my-tasks-table td:nth-child(10){width:110px}
+.my-tasks-table th:nth-child(11),.my-tasks-table td:nth-child(11){width:250px}
+.my-tasks-table th:nth-child(12),.my-tasks-table td:nth-child(12){width:68px}
+.all-tasks-table{min-width:2080px;table-layout:fixed}
+.all-tasks-table th:nth-child(1),.all-tasks-table td:nth-child(1){width:120px}
+.all-tasks-table th:nth-child(2),.all-tasks-table td:nth-child(2){width:150px}
+.all-tasks-table th:nth-child(3),.all-tasks-table td:nth-child(3){width:220px}
+.all-tasks-table th:nth-child(4),.all-tasks-table td:nth-child(4){width:104px}
+.all-tasks-table th:nth-child(5),.all-tasks-table td:nth-child(5){width:145px}
+.all-tasks-table th:nth-child(6),.all-tasks-table td:nth-child(6){width:88px}
+.all-tasks-table th:nth-child(7),.all-tasks-table td:nth-child(7){width:70px}
+.all-tasks-table th:nth-child(8),.all-tasks-table td:nth-child(8){width:92px}
+.all-tasks-table th:nth-child(9),.all-tasks-table td:nth-child(9){width:110px}
+.all-tasks-table th:nth-child(10),.all-tasks-table td:nth-child(10){width:92px}
+.all-tasks-table th:nth-child(11),.all-tasks-table td:nth-child(11){width:110px}
+.all-tasks-table th:nth-child(12),.all-tasks-table td:nth-child(12){width:260px}
+.all-tasks-table th:nth-child(13),.all-tasks-table td:nth-child(13){width:68px}
+.all-tasks-table th:nth-child(14),.all-tasks-table td:nth-child(14){width:96px}
+.all-tasks-table th:nth-child(15),.all-tasks-table td:nth-child(15){width:118px}
+.all-tasks-table th:nth-child(16),.all-tasks-table td:nth-child(16){width:110px}
