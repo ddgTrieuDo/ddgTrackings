@@ -282,6 +282,47 @@ function renderProduction(){
     </div>`;
 }
 
+async function signedShot(path){if(!path)return'';for(const bucket of ['screenshots','tracking-screenshots']){const {data,error}=await sb.storage.from(bucket).createSignedUrl(path,600);if(!error&&data?.signedUrl)return data.signedUrl}return''}
+function renderScreenshots(){const mine=state.screenshots.filter(s=>s.user_id===state.profile.id).sort((a,b)=>new Date(b.captured_at||0)-new Date(a.captured_at||0)).slice(0,100);$('#page-screenshots').innerHTML=`<div class="notice">Desktop screenshots are captured by the DDG Tracking desktop agent and synced to Supabase. The browser portal displays synced images.</div><div id="myShots" class="screenshot-grid"></div>`;drawShotCards(mine,$('#myShots'))}
+async function drawShotCards(shots,el){el.innerHTML=shots.length?'<div class="muted">Loading previews...</div>':'<div class="muted">No screenshots.</div>';if(!shots.length)return;const cards=[];for(const s of shots){const url=await signedShot(s.storage_path);cards.push(`<article class="shot-card" data-url="${esc(url)}"><div class="shot-thumb">${url?`<img src="${esc(url)}" loading="lazy">`:'Preview unavailable'}</div><div class="shot-meta"><b>${s.captured_at?new Date(s.captured_at).toLocaleString():'—'}</b><span>${esc(pById(s.project_id)?.name||'No project')} · ${esc(tById(s.task_id)?.name||'No task')}</span></div></article>`)}el.innerHTML=cards.join('');el.querySelectorAll('[data-url]').forEach(x=>x.onclick=()=>x.dataset.url&&window.open(x.dataset.url,'_blank'))}
+
+function renderAttendance(){const el=$('#page-attendance');el.innerHTML=tabs([['live','Live Team'],['leave','Leave Requests'],['schedule','Work Schedule & Holidays'],['balance','Leave Balances']],state.attendanceTab)+`<div id="attendanceBody"></div>`;hookTabs(el,v=>state.attendanceTab=v);({live:drawLiveTeam,leave:drawLeave,schedule:drawSchedule,balance:drawBalances}[state.attendanceTab]||drawLiveTeam)()}
+function drawLiveTeam(){const now=Date.now(),today=new Date();const approved=state.leaveRequests.filter(l=>String(l.status).toLowerCase()==='approved'&&new Date(l.start_date)<=today&&new Date(l.end_date)>=today);$('#attendanceBody').innerHTML=`<div class="card"><div class="table-wrap"><table class="table"><thead><tr><th>Employee</th><th>Employee ID</th><th>Role</th><th>Status</th><th>Project</th><th>Task</th><th>Device</th><th>Last Seen</th></tr></thead><tbody>${state.profiles.filter(p=>p.active!==false).map(p=>{const d=state.devices.filter(x=>x.user_id===p.id).sort((a,b)=>new Date(b.last_seen||0)-new Date(a.last_seen||0))[0],onLeave=approved.some(l=>l.user_id===p.id),recent=d&&now-new Date(d.last_seen||0).getTime()<5*60000,status=onLeave?'On Leave':!recent?'Absent / Offline':d.is_tracking?'Tracking':'Not Tracking';return`<tr><td>${esc(nameOf(p.id))}</td><td>${esc(p.employee_id||'—')}</td><td>${esc(p.role||'Employee')}</td><td><span class="live-dot ${status==='Tracking'?'green':status==='Absent / Offline'?'red':status==='On Leave'?'amber':'gray'}"></span>${status}</td><td>${esc(pById(d?.project_id)?.name||d?.project_name||'No project')}</td><td>${esc(tById(d?.task_id)?.name||d?.task_name||'No task')}</td><td>${esc(d?.device_name||'—')}</td><td>${d?.last_seen?new Date(d.last_seen).toLocaleString():'—'}</td></tr>`}).join('')}</tbody></table></div></div>`}
+function drawLeave(){
+  const canReview=roleIsManager();
+  const rows=state.leaveRequests.map(l=>{
+    const isPending=String(l.status||'').toLowerCase()==='pending';
+    const canEdit=l.user_id===state.profile.id&&isPending;
+    let actions='';
+    if(canEdit) actions+=`<button data-edit-leave="${esc(l.id)}">Edit</button>`;
+    if(canReview&&isPending){
+      actions+=`${actions?' ':''}<button class="success" data-approve-leave="${esc(l.id)}">Approve</button> <button class="danger" data-reject-leave="${esc(l.id)}">Reject</button>`;
+    }
+    return `<tr>
+      <td>${esc(nameOf(l.user_id))}</td>
+      <td>${esc(l.leave_type||'')}</td>
+      <td>${esc(l.start_date||'')}</td>
+      <td>${esc(l.end_date||'')}</td>
+      <td>${esc(l.portion||'')}</td>
+      <td>${esc(l.reason||'')}</td>
+      <td>${esc(l.status||'Pending')}</td>
+      <td>${esc(l.reviewer_comment||'')}</td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+  $('#attendanceBody').innerHTML=`
+    <div class="toolbar"><button id="newLeave">+ New Leave Request</button></div>
+    <div class="card"><div class="table-wrap"><table class="table">
+      <thead><tr><th>Employee</th><th>Leave Type</th><th>Start Date</th><th>End Date</th><th>Portion</th><th>Reason</th><th>Status</th><th>Reviewer Comment</th><th>Actions</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div></div>`;
+  $('#newLeave').onclick=()=>leaveModal();
+  $$('[data-edit-leave]').forEach(b=>b.onclick=()=>leaveModal(state.leaveRequests.find(x=>x.id===b.dataset.editLeave)));
+  $$('[data-approve-leave]').forEach(b=>b.onclick=()=>reviewLeave(b.dataset.approveLeave,'Approved'));
+  $$('[data-reject-leave]').forEach(b=>b.onclick=()=>reviewLeave(b.dataset.rejectLeave,'Rejected'));
+}
+
+
 function leaveModal(l=null){const ent=num(state.profile.annual_leave_days),used=usedLeave(state.profile.id);modal(l?'Edit Leave Request':'New Leave Request',`<div class="notice">Annual Leave: Entitlement ${fmt(ent)} · Used ${fmt(used)} · Remaining ${fmt(Math.max(0,ent-used))}</div><div class="form-grid"><div class="field"><label>Leave Type</label><select id="lvType">${['Annual Leave','Unpaid Leave','Sick Leave','Other'].map(x=>`<option ${l?.leave_type===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>Start Date</label><input id="lvStart" type="date" value="${esc(l?.start_date||isoDay())}"></div><div class="field"><label>End Date</label><input id="lvEnd" type="date" value="${esc(l?.end_date||isoDay())}"></div><div class="field"><label>Portion</label><select id="lvPortion">${['Full Day','Morning Half','Afternoon Half'].map(x=>`<option ${l?.portion===x?'selected':''}>${x}</option>`).join('')}</select></div><div class="field span3"><label>Reason</label><textarea id="lvReason">${esc(l?.reason||'')}</textarea></div></div>`,async()=>{const row={user_id:state.profile.id,leave_type:$('#lvType').value,start_date:$('#lvStart').value,end_date:$('#lvEnd').value,portion:$('#lvPortion').value,reason:$('#lvReason').value.trim(),status:'Pending'};const r=l?await sb.from('leave_requests').update(row).eq('id',l.id):await sb.from('leave_requests').insert(row);if(r.error)return alert(r.error.message);closeModal();await loadAll()})}
 function reviewLeave(id,status){modal(`${status} Leave Request`,`<div class="field"><label>Reviewer Comment</label><textarea id="reviewComment"></textarea></div>`,async()=>{const {error}=await sb.from('leave_requests').update({status,reviewer_comment:$('#reviewComment').value.trim()}).eq('id',id);if(error)return alert(error.message);closeModal();await loadAll()},status)}
 function usedLeave(uid){const y=new Date().getFullYear();return state.leaveRequests.filter(l=>l.user_id===uid&&String(l.status).toLowerCase()==='approved'&&String(l.leave_type||'').toLowerCase().includes('annual')&&new Date(l.start_date).getFullYear()===y).reduce((s,l)=>{if(String(l.portion).toLowerCase().includes('half'))return s+.5;let a=new Date(l.start_date),b=new Date(l.end_date),n=0;while(a<=b){if(![0,6].includes(a.getDay()))n++;a.setDate(a.getDate()+1)}return s+Math.max(1,n)},0)}
@@ -385,7 +426,7 @@ function employeeModal(p=null){modal(p?'Edit Employee':'New Employee',`<div clas
 async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
 
 function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, All Tasks, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.13 Production Sync</p></div>`}
+function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, All Tasks, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.14 Production Dashboard Fix</p></div>`}
 
 async function bootstrapAuth(){
   try{
