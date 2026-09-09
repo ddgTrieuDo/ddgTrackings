@@ -107,3 +107,45 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 .management-actions{display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;flex-wrap:wrap}
 .management-note{margin-top:10px}
 @media(max-width:1000px){.app-task-layout{grid-template-columns:1fr}.task-project-column{min-height:auto}.task-cards-head{flex-direction:column;align-items:stretch}.task-card-grid{grid-template-columns:repeat(2,1fr)}}
+
+
+/* Web 4.18 - Tasks UI refresh */
+#page-tasks .tabbar{margin-bottom:20px}
+#page-tasks .tab-btn{padding:10px 16px;border-radius:12px;font-weight:600;color:#344054;transition:all .18s ease}
+#page-tasks .tab-btn:hover{background:#edf3ff;color:#245ae8}
+#page-tasks .tab-btn.active{background:#dfe8ff;color:#245ae8;box-shadow:0 4px 12px rgba(47,111,237,.12)}
+.app-task-section{max-width:1600px}
+.app-task-section h2{font-size:20px;margin:8px 0 18px}
+.app-task-layout{grid-template-columns:280px minmax(0,1fr);gap:28px;align-items:start}
+.task-project-column{padding:16px;border-radius:16px;box-shadow:0 10px 24px rgba(15,23,42,.06);background:linear-gradient(180deg,#fff 0%,#fbfcff 100%)}
+.task-project-column .field input,.task-cards-head .field input,.task-project-picker select{border:1px solid #d5dce7;border-radius:10px;padding:10px 12px;min-height:42px}
+.task-project-list{background:#f8faff;border:1px solid #edf1f7;border-radius:14px;padding:8px;min-height:320px;max-height:440px}
+.task-project-item{padding:14px 12px;border-radius:12px;font-weight:600;transition:all .18s ease}
+.task-project-item:hover{background:#eef4ff;color:#245ae8;transform:translateX(2px)}
+.task-project-item.active{background:#e4ecff;color:#245ae8;box-shadow:inset 0 0 0 1px #c7d7ff}
+.task-cards-column{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+.task-cards-head{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #eef2f6;align-items:flex-end}
+.task-cards-head .field{min-width:280px}
+.task-card-stack{display:flex;flex-direction:column;gap:16px}
+.task-card{border:1px solid #dbe6ff;border-radius:16px;padding:18px;box-shadow:0 8px 20px rgba(15,23,42,.05);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease}
+.task-card:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(15,23,42,.08);border-color:#c8d8ff}
+.task-card.mine{border-color:#c4d7ff;box-shadow:0 0 0 1px #d9e5ff,0 10px 22px rgba(47,111,237,.06)}
+.task-card-top{margin-bottom:14px}
+.task-card-name{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.task-card-meta{font-size:12px;color:#667085}
+.task-card-grid{display:grid;grid-template-columns:repeat(4,minmax(110px,1fr));gap:12px;margin-bottom:12px}
+.task-card-grid>div{background:#f8fbff;border:1px solid #e4edf9;border-radius:12px;padding:12px 14px;min-height:72px}
+.task-card-grid b{display:block;margin-bottom:6px;font-size:11px;color:#344054;text-transform:uppercase;letter-spacing:.03em}
+.task-card-foot{padding-top:12px;border-top:1px dashed #e4e7ec;font-size:12px;color:#667085}
+.task-card .pill{background:#edf3ff;color:#245ae8;border:1px solid #d7e4ff;font-weight:700;padding:7px 10px}
+.management-board{padding:18px;border-radius:16px;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+.management-actions{margin-bottom:14px}
+.management-actions button{border-radius:10px;padding:9px 14px}
+.management-actions .primary{box-shadow:0 8px 18px rgba(47,111,237,.16)}
+#taskSelectionInfo{padding:10px 12px;border:1px solid #e5e7eb;background:#f8fafc;border-radius:10px;color:#475467}
+.management-note{margin-top:10px}
+#page-tasks .table-wrap{border:1px solid #d5dce7;border-radius:14px;overflow:auto}
+#page-tasks .table th{background:#f8fbff;color:#344054}
+#page-tasks .table tbody tr.selected td{background:#2f6fed;color:#fff}
+#page-tasks .table tbody tr:hover td{background:#f7faff}
+@media(max-width:1000px){.app-task-layout{grid-template-columns:1fr}.task-cards-head{flex-direction:column;align-items:stretch}.task-cards-head .field{min-width:0}.task-card-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}}
