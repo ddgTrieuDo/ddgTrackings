@@ -371,10 +371,14 @@ body.dashboard-mode .content-head{display:none}
 .dashboard-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:12px;align-items:end}
 .dashboard-filter-grid .field label,.dashboard-filter-bottom .field label{font-size:11px;font-weight:800;color:#111827;margin-bottom:4px}
 .dashboard-filter-grid .field select,.dashboard-filter-grid .field input,.dashboard-filter-bottom .field input{border:1px solid #aeb7c4;border-radius:1px;padding:6px 8px;min-height:28px;background:#fff}
-.dash-date-shell{display:flex;align-items:center;gap:8px;border:1px solid #aeb7c4;border-radius:8px;padding:8px 10px;background:#fff;min-height:52px}
-.dash-date-display{border:0!important;box-shadow:none!important;background:transparent!important;padding:0!important;min-height:auto!important;flex:1 1 auto;font-size:15px;color:#111827;cursor:pointer}
-.dash-date-display::placeholder{color:#64748b}
-.dash-date-clear{border:0;background:transparent;color:#2563eb;font-weight:700;cursor:pointer;padding:0 2px;white-space:nowrap}
+.dash-date-shell{display:grid;grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr);gap:7px;align-items:center;background:#fff}
+.dash-date-part{display:flex;align-items:center;border:1px solid #aeb7c4;border-radius:6px;background:#fff;min-width:0;height:34px;overflow:hidden}
+.dashboard-filter-grid .field .dash-date-input{border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;padding:6px 7px!important;min-height:32px!important;min-width:0!important;width:100%!important;font-size:13px;color:#111827;outline:0}
+.dash-date-input::placeholder{color:#64748b;opacity:1}
+.dash-calendar-btn{border:0!important;background:transparent!important;color:#344054!important;padding:0 7px!important;min-width:30px!important;width:30px!important;height:32px!important;display:grid;place-items:center;flex:0 0 30px;border-radius:0!important}
+.dash-calendar-btn:hover{background:#f3f6fb!important}
+.dash-calendar-btn svg{width:15px;height:15px;display:block;pointer-events:none}
+.dash-date-sep{text-align:center;font-weight:700;color:#475467;line-height:1}
 .flatpickr-calendar{font-family:inherit;border-radius:0;box-shadow:0 8px 24px rgba(15,23,42,.18)}
 .flatpickr-months .flatpickr-month,.flatpickr-current-month .flatpickr-monthDropdown-months,.flatpickr-current-month input.cur-year{font-weight:700}
 .dashboard-filter-bottom{display:grid;grid-template-columns:minmax(260px,1fr) 320px;gap:16px;align-items:end}
@@ -436,7 +440,7 @@ body.dashboard-mode .content-head{display:none}
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.31 · Dashboard end-date display fix</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.32 · Separate start/end due-date fields</div>
     </div>
   </section>
 
@@ -614,18 +618,38 @@ body.dashboard-mode .content-head{display:none}
         return `<div class="dash-chart"><div class="dash-chart-legend"><span><i class="swatch est"></i> Estimated Hours</span><span><i class="swatch used"></i> Used Hours</span></div>${rows.map(p=>{const est=originalHours(p.id)+approvedHours(p.id),used=projectHours(p.id),estPct=est/max*100,usedPct=used/max*100;return `<div class="dash-chart-row"><div class="dash-chart-name">${esc(p.name)}</div><div class="dash-chart-bars"><div class="dash-chart-track"><div class="dash-chart-bar est" style="width:${estPct}%"></div><div class="dash-chart-bar used" style="width:${usedPct}%"></div></div><div class="dash-chart-values"><div>${fmt(est)}</div><div>${fmt(used)}</div></div></div></div>`}).join('')||'<div class="muted small">No data.</div>'}</div>`;
       }
       function initDashboardDatePicker(){
-        const el=$('#dashDateRange');
-        if(!el) return;
-        el.value=formatDashRangeValue(state.dashboardFilters?.dueFrom,state.dashboardFilters?.dueTo);
-        const defaults=[];
-        if(state.dashboardFilters?.dueFrom) defaults.push(state.dashboardFilters.dueFrom);
-        if(state.dashboardFilters?.dueTo) defaults.push(state.dashboardFilters.dueTo);
-        if(window._dashDatePicker && typeof window._dashDatePicker.destroy==='function'){try{window._dashDatePicker.destroy()}catch(_){}}
-        if(typeof window.flatpickr==='function'){
-          window._dashDatePicker=window.flatpickr(el,{mode:'range',dateFormat:'m/d/Y',defaultDate:defaults,disableMobile:true,locale:{rangeSeparator:' — '},allowInput:false,clickOpens:true,closeOnSelect:false,onChange:(selectedDates,_dateStr,instance)=>{const from=selectedDates[0]?isoLocalDate(selectedDates[0]):'';const to=selectedDates[1]?isoLocalDate(selectedDates[1]):'';instance.input.value=formatDashRangeValue(from,to);if(selectedDates.length===2){state.dashboardFilters.dueFrom=from;state.dashboardFilters.dueTo=to;setTimeout(()=>renderDashboard(),0)}} ,onClose:(selectedDates)=>{state.dashboardFilters.dueFrom=selectedDates[0]?isoLocalDate(selectedDates[0]):'';state.dashboardFilters.dueTo=selectedDates[1]?isoLocalDate(selectedDates[1]):'';if(!selectedDates.length||selectedDates.length===1)renderDashboard();}});
+        const fromEl=$('#dashDueFromText'),toEl=$('#dashDueToText');
+        if(!fromEl||!toEl)return;
+        const f=state.dashboardFilters||{};
+        const pretty=v=>{if(!v)return '';const d=new Date(`${v}T00:00:00`);return Number.isNaN(d.getTime())?'':d.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'})};
+        fromEl.value=pretty(f.dueFrom);
+        toEl.value=pretty(f.dueTo);
+        for(const key of ['_dashDueFromPicker','_dashDueToPicker']){
+          const inst=window[key];
+          if(inst&&typeof inst.destroy==='function'){try{inst.destroy()}catch(_){}}
+          window[key]=null;
         }
-        const clearBtn=$('#dashDateClear');
-        if(clearBtn) clearBtn.onclick=()=>{state.dashboardFilters.dueFrom='';state.dashboardFilters.dueTo='';if(window._dashDatePicker && typeof window._dashDatePicker.clear==='function')window._dashDatePicker.clear();renderDashboard()};
+        const applyFrom=date=>{
+          const next=date?isoLocalDate(date):'';
+          state.dashboardFilters.dueFrom=next;
+          if(state.dashboardFilters.dueTo&&next&&state.dashboardFilters.dueTo<next)state.dashboardFilters.dueTo='';
+          renderDashboard();
+        };
+        const applyTo=date=>{
+          state.dashboardFilters.dueTo=date?isoLocalDate(date):'';
+          renderDashboard();
+        };
+        if(typeof window.flatpickr==='function'){
+          window._dashDueFromPicker=window.flatpickr(fromEl,{dateFormat:'m/d/Y',defaultDate:f.dueFrom||null,disableMobile:true,allowInput:true,maxDate:f.dueTo||null,onChange:d=>applyFrom(d[0]||null)});
+          window._dashDueToPicker=window.flatpickr(toEl,{dateFormat:'m/d/Y',defaultDate:f.dueTo||null,disableMobile:true,allowInput:true,minDate:f.dueFrom||null,onChange:d=>applyTo(d[0]||null)});
+        }else{
+          const parse=v=>{const m=String(v||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(!m)return null;const d=new Date(Number(m[3]),Number(m[1])-1,Number(m[2]));return Number.isNaN(d.getTime())?null:d};
+          fromEl.onchange=()=>applyFrom(parse(fromEl.value));
+          toEl.onchange=()=>applyTo(parse(toEl.value));
+        }
+        const fromBtn=$('#dashDueFromBtn'),toBtn=$('#dashDueToBtn');
+        if(fromBtn)fromBtn.onclick=()=>{if(window._dashDueFromPicker)window._dashDueFromPicker.open();else fromEl.focus()};
+        if(toBtn)toBtn.onclick=()=>{if(window._dashDueToPicker)window._dashDueToPicker.open();else toEl.focus()};
       }
 
       function modal(title,html,onSave,saveText='Save'){ $('#modal').innerHTML=`<h3>${esc(title)}</h3>${html}<div class="modal-actions"><button id="mCancel">Cancel</button>${onSave?`<button id="mSave" class="primary">${esc(saveText)}</button>`:''}</div>`;$('#modalBackdrop').classList.remove('hidden');$('#mCancel').onclick=closeModal;if(onSave)$('#mSave').onclick=onSave} function closeModal(){$('#modalBackdrop').classList.add('hidden')}
@@ -720,7 +744,7 @@ body.dashboard-mode .content-head{display:none}
           <div class="field"><label>Customer</label><select id="dashCustomer"><option ${f.customer==='All'?'selected':''}>All</option>${dashboardOptions('customer').map(v=>`<option value="${esc(v)}" ${f.customer===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
           <div class="field"><label>Project Status</label><select id="dashStatus"><option ${f.status==='All'?'selected':''}>All</option>${[...new Set(state.projects.map(p=>dashStatusText(p.status)))].sort((a,b)=>a.localeCompare(b)).map(v=>`<option value="${esc(v)}" ${f.status===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
           <div class="field"><label>Office</label><select id="dashOffice"><option ${f.office==='All'?'selected':''}>All</option>${dashboardOptions('office').map(v=>`<option value="${esc(v)}" ${f.office===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
-          <div class="field"><label>Date Range – Due Date</label><div class="dash-date-shell"><input id="dashDateRange" class="dash-date-display" placeholder="mm/dd/yyyy — mm/dd/yyyy" value="${esc(formatDashRangeValue(f.dueFrom,f.dueTo))}" readonly><button id="dashDateClear" type="button" class="dash-date-clear" title="Clear date range">Clear</button></div></div>
+          <div class="field"><label>Date Range – Due Date</label><div class="dash-date-shell"><div class="dash-date-part"><input id="dashDueFromText" class="dash-date-input" inputmode="numeric" placeholder="mm/dd/yyyy" value=""><button id="dashDueFromBtn" type="button" class="dash-calendar-btn" aria-label="Choose start date" title="Start date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg></button></div><span class="dash-date-sep">—</span><div class="dash-date-part"><input id="dashDueToText" class="dash-date-input" inputmode="numeric" placeholder="mm/dd/yyyy" value=""><button id="dashDueToBtn" type="button" class="dash-calendar-btn" aria-label="Choose end date" title="End date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg></button></div></div></div>
         </div>
         <div class="dashboard-filter-bottom"><div class="dashboard-update-info">Updated at ${new Date().toLocaleTimeString('en-US',{hour12:false})}. ${filtered.length} projects, ${coRows.length} change order.</div><div class="field dash-search-field"><label>Search Projects</label><input id="dashSearch" placeholder="Search..." value="${esc(f.search||'')}"></div></div>
         <div class="dashboard-kpis">${[
@@ -1092,7 +1116,7 @@ body.dashboard-mode .content-head{display:none}
       async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
       
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.31 Dashboard end-date display fix</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.32 Separate start/end due-date fields</p></div>`}
       
       async function bootstrapAuth(){
         try{
