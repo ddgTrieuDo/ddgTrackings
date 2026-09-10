@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>DDG Tracking Web</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
   <style>
 :root{--bg:#f3f6fb;--panel:#fff;--text:#101828;--muted:#475467;--line:#d8dee8;--grid:#e5e9ef;--blue:#2f6fed;--blue2:#e6eeff;--nav:#162238;--green:#10a46f;--red:#db3c4b;--amber:#df9713;--shadow:0 1px 2px #1018280d}
 *{box-sizing:border-box}html,body,#app{margin:0;min-height:100%;font-family:"Segoe UI",Arial,sans-serif;color:var(--text);background:var(--bg)}button,input,select,textarea{font:inherit}.hidden{display:none!important}
@@ -370,10 +371,12 @@ body.dashboard-mode .content-head{display:none}
 .dashboard-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:12px;align-items:end}
 .dashboard-filter-grid .field label,.dashboard-filter-bottom .field label{font-size:11px;font-weight:800;color:#111827;margin-bottom:4px}
 .dashboard-filter-grid .field select,.dashboard-filter-grid .field input,.dashboard-filter-bottom .field input{border:1px solid #aeb7c4;border-radius:1px;padding:6px 8px;min-height:28px;background:#fff}
-.dash-date-range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.dash-date-item{display:flex;align-items:center;gap:6px}
-.dash-date-item input[type="checkbox"]{margin:0;flex:0 0 16px;width:16px;min-width:16px;max-width:16px;height:16px;padding:0;border:1px solid #9aa5b1;background:#fff;appearance:auto;-webkit-appearance:checkbox}
-.dash-date-item input[type="date"]{flex:1 1 auto;width:auto;min-width:0}
+.dash-date-shell{display:flex;align-items:center;gap:8px;border:1px solid #aeb7c4;border-radius:8px;padding:8px 10px;background:#fff;min-height:52px}
+.dash-date-display{border:0!important;box-shadow:none!important;background:transparent!important;padding:0!important;min-height:auto!important;flex:1 1 auto;font-size:15px;color:#111827;cursor:pointer}
+.dash-date-display::placeholder{color:#64748b}
+.dash-date-clear{border:0;background:transparent;color:#2563eb;font-weight:700;cursor:pointer;padding:0 2px;white-space:nowrap}
+.flatpickr-calendar{font-family:inherit;border-radius:0;box-shadow:0 8px 24px rgba(15,23,42,.18)}
+.flatpickr-months .flatpickr-month,.flatpickr-current-month .flatpickr-monthDropdown-months,.flatpickr-current-month input.cur-year{font-weight:700}
 .dashboard-filter-bottom{display:grid;grid-template-columns:minmax(260px,1fr) 320px;gap:16px;align-items:end}
 .dashboard-update-info{font-size:13px;color:#111827;padding-top:2px}
 .dash-search-field{justify-self:end;width:100%;max-width:320px}
@@ -433,7 +436,7 @@ body.dashboard-mode .content-head{display:none}
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.29 · Dashboard due-date filter fix</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.30 · Dashboard date-range picker style</div>
     </div>
   </section>
 
@@ -473,6 +476,7 @@ body.dashboard-mode .content-head{display:none}
   </div>
 </div>
 <div id="modalBackdrop" class="modal-backdrop hidden"><div id="modal" class="modal"></div></div>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 (function () {
   const loginMsg = () => document.getElementById('loginMsg');
@@ -570,17 +574,19 @@ body.dashboard-mode .content-head{display:none}
       
       function statusClass(s){s=String(s||'').toLowerCase();return s.includes('approved')||s.includes('track')||s.includes('done')||s==='tracking'?'good':s.includes('pending')||s.includes('progress')||s.includes('risk')?'warn':s.includes('reject')||s.includes('over')||s.includes('offline')?'bad':''}
       function dashboardOptions(field){return [...new Set(state.projects.map(p=>String(p?.[field]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
+      function isoLocalDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
       function fmtDashDate(value){if(!value)return '—';const d=new Date(value);if(Number.isNaN(d.getTime()))return esc(value);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+      function formatDashRangeValue(from,to){if(!from&&!to)return '';const parts=[];if(from){const d=new Date(`${from}T00:00:00`);parts.push(Number.isNaN(d.getTime())?from:d.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}))}if(to){const d=new Date(`${to}T00:00:00`);parts.push(Number.isNaN(d.getTime())?to:d.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}))}return parts.join(' — ')}
       function dashStatusText(value){return String(value||'Not Started')}
       function dashStatusClass(value){const s=String(value||'').toLowerCase();if(s.includes('track')||s.includes('approved')||s.includes('complete'))return 'good';if(s.includes('risk')||s.includes('pending')||s.includes('hold'))return 'warn';if(s.includes('over')||s.includes('reject'))return 'bad';return 'neutral'}
       function dashboardFilteredProjects(){
         const f=state.dashboardFilters||{};
         const q=String(f.search||'').trim().toLowerCase();
         return state.projects.filter(p=>{
-          const due=p?.due_date?new Date(p.due_date):null;
-          const fromOk=!f.useDueFrom||(due&&!Number.isNaN(due.getTime())&&due>=new Date(f.dueFrom));
+          const due=p?.due_date?new Date(`${p.due_date}T00:00:00`):null;
+          const fromOk=!f.dueFrom||(due&&!Number.isNaN(due.getTime())&&due>=new Date(`${f.dueFrom}T00:00:00`));
           const toLimit=f.dueTo?new Date(`${f.dueTo}T23:59:59`):null;
-          const toOk=!f.useDueTo||(due&&toLimit&&!Number.isNaN(due.getTime())&&due<=toLimit);
+          const toOk=!f.dueTo||(due&&toLimit&&!Number.isNaN(due.getTime())&&due<=toLimit);
           const searchOk=!q||[
             p.name,p.customer,p.project_manager,p.current_phase,p.office,p.job_number,p.package_no,p.status
           ].filter(Boolean).some(v=>String(v).toLowerCase().includes(q));
@@ -606,6 +612,19 @@ body.dashboard-mode .content-head{display:none}
         const rows=projects.slice().sort((a,b)=>(originalHours(b.id)+approvedHours(b.id))-(originalHours(a.id)+approvedHours(a.id))).slice(0,5);
         const max=Math.max(1,...rows.map(p=>Math.max(originalHours(p.id)+approvedHours(p.id),projectHours(p.id))));
         return `<div class="dash-chart"><div class="dash-chart-legend"><span><i class="swatch est"></i> Estimated Hours</span><span><i class="swatch used"></i> Used Hours</span></div>${rows.map(p=>{const est=originalHours(p.id)+approvedHours(p.id),used=projectHours(p.id),estPct=est/max*100,usedPct=used/max*100;return `<div class="dash-chart-row"><div class="dash-chart-name">${esc(p.name)}</div><div class="dash-chart-bars"><div class="dash-chart-track"><div class="dash-chart-bar est" style="width:${estPct}%"></div><div class="dash-chart-bar used" style="width:${usedPct}%"></div></div><div class="dash-chart-values"><div>${fmt(est)}</div><div>${fmt(used)}</div></div></div></div>`}).join('')||'<div class="muted small">No data.</div>'}</div>`;
+      }
+      function initDashboardDatePicker(){
+        const el=$('#dashDateRange');
+        if(!el) return;
+        const defaults=[];
+        if(state.dashboardFilters?.dueFrom) defaults.push(state.dashboardFilters.dueFrom);
+        if(state.dashboardFilters?.dueTo) defaults.push(state.dashboardFilters.dueTo);
+        if(window._dashDatePicker && typeof window._dashDatePicker.destroy==='function'){try{window._dashDatePicker.destroy()}catch(_){}}
+        if(typeof window.flatpickr==='function'){
+          window._dashDatePicker=window.flatpickr(el,{mode:'range',dateFormat:'m/d/Y',defaultDate:defaults,disableMobile:true,locale:{rangeSeparator:' — '},allowInput:false,clickOpens:true,onClose:(selectedDates)=>{state.dashboardFilters.dueFrom=selectedDates[0]?isoLocalDate(selectedDates[0]):'';state.dashboardFilters.dueTo=selectedDates[1]?isoLocalDate(selectedDates[1]):'';renderDashboard();}});
+        }
+        const clearBtn=$('#dashDateClear');
+        if(clearBtn) clearBtn.onclick=()=>{state.dashboardFilters.dueFrom='';state.dashboardFilters.dueTo='';if(window._dashDatePicker && typeof window._dashDatePicker.clear==='function')window._dashDatePicker.clear();renderDashboard()};
       }
 
       function modal(title,html,onSave,saveText='Save'){ $('#modal').innerHTML=`<h3>${esc(title)}</h3>${html}<div class="modal-actions"><button id="mCancel">Cancel</button>${onSave?`<button id="mSave" class="primary">${esc(saveText)}</button>`:''}</div>`;$('#modalBackdrop').classList.remove('hidden');$('#mCancel').onclick=closeModal;if(onSave)$('#mSave').onclick=onSave} function closeModal(){$('#modalBackdrop').classList.add('hidden')}
@@ -700,7 +719,7 @@ body.dashboard-mode .content-head{display:none}
           <div class="field"><label>Customer</label><select id="dashCustomer"><option ${f.customer==='All'?'selected':''}>All</option>${dashboardOptions('customer').map(v=>`<option value="${esc(v)}" ${f.customer===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
           <div class="field"><label>Project Status</label><select id="dashStatus"><option ${f.status==='All'?'selected':''}>All</option>${[...new Set(state.projects.map(p=>dashStatusText(p.status)))].sort((a,b)=>a.localeCompare(b)).map(v=>`<option value="${esc(v)}" ${f.status===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
           <div class="field"><label>Office</label><select id="dashOffice"><option ${f.office==='All'?'selected':''}>All</option>${dashboardOptions('office').map(v=>`<option value="${esc(v)}" ${f.office===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
-          <div class="field"><label>Due Date Range</label><div class="dash-date-range"><label class="dash-date-item"><input type="checkbox" id="dashUseFrom" ${f.useDueFrom?'checked':''}><input id="dashDueFrom" type="date" value="${esc(f.dueFrom||'')}" ${f.useDueFrom?'':'disabled'}></label><label class="dash-date-item"><input type="checkbox" id="dashUseTo" ${f.useDueTo?'checked':''}><input id="dashDueTo" type="date" value="${esc(f.dueTo||'')}" ${f.useDueTo?'':'disabled'}></label></div></div>
+          <div class="field"><label>Date Range – Due Date</label><div class="dash-date-shell"><input id="dashDateRange" class="dash-date-display" placeholder="mm/dd/yyyy — mm/dd/yyyy" value="${esc(formatDashRangeValue(f.dueFrom,f.dueTo))}" readonly><button id="dashDateClear" type="button" class="dash-date-clear" title="Clear date range">Clear</button></div></div>
         </div>
         <div class="dashboard-filter-bottom"><div class="dashboard-update-info">Updated at ${new Date().toLocaleTimeString('en-US',{hour12:false})}. ${filtered.length} projects, ${coRows.length} change order.</div><div class="field dash-search-field"><label>Search Projects</label><input id="dashSearch" placeholder="Search..." value="${esc(f.search||'')}"></div></div>
         <div class="dashboard-kpis">${[
@@ -720,11 +739,7 @@ body.dashboard-mode .content-head{display:none}
         const bind=(id,key)=>{const el=$(id);if(el)el.onchange=e=>{state.dashboardFilters[key]=e.target.value;renderDashboard()}};
         bind('#dashPm','pm');bind('#dashCustomer','customer');bind('#dashStatus','status');bind('#dashOffice','office');
         const search=$('#dashSearch');if(search)search.oninput=e=>{state.dashboardFilters.search=e.target.value;renderDashboard()};
-        const useFrom=$('#dashUseFrom'), useTo=$('#dashUseTo'), from=$('#dashDueFrom'), to=$('#dashDueTo');
-        if(useFrom)useFrom.onchange=e=>{state.dashboardFilters.useDueFrom=e.target.checked;if(from)from.disabled=!e.target.checked;renderDashboard()};
-        if(useTo)useTo.onchange=e=>{state.dashboardFilters.useDueTo=e.target.checked;if(to)to.disabled=!e.target.checked;renderDashboard()};
-        if(from)from.onchange=e=>{state.dashboardFilters.dueFrom=e.target.value;renderDashboard()};
-        if(to)to.onchange=e=>{state.dashboardFilters.dueTo=e.target.value;renderDashboard()};
+        initDashboardDatePicker();
         const rb=$('#classicReloadBtn');if(rb)rb.onclick=()=>loadAll();
       }
       function projectPortfolioTable(){return `<div class="table-wrap"><table class="table"><thead><tr><th>Project</th><th>Customer</th><th>Project Manager</th><th>Current Phase</th><th>Due</th><th>Original Hours</th><th>Original Used</th><th>Approved CO Hours</th><th>CO Hours Used</th><th>Revised Hours</th><th>Hours Used</th><th>Over Approved</th><th>Remaining Hours</th><th>Overall Progress</th><th>Budget Used %</th><th>Status</th><th>Open COs</th></tr></thead><tbody>${state.projects.map(p=>{const o=originalHours(p.id),a=approvedHours(p.id),u=projectHours(p.id),r=o+a,rem=Math.max(0,r-u),over=Math.max(0,u-r),pct=r?Math.min(999,u/r*100):0;return`<tr><td>${projectLink(p)}</td><td>${esc(p.customer||'—')}</td><td>${esc(p.project_manager||'—')}</td><td>${esc(p.current_phase||'—')}</td><td>${esc(p.due_date||'—')}</td><td>${fmt(o)}</td><td>${fmt(Math.min(u,o))}</td><td>${fmt(a)}</td><td>${fmt(Math.max(0,u-o))}</td><td>${fmt(r)}</td><td>${fmt(u)}</td><td>${fmt(over)}</td><td>${fmt(rem)}</td><td>${num(p.overall_progress).toFixed(0)}%</td><td>${pct.toFixed(0)}%</td><td><span class="status ${statusClass(p.status)}">${esc(p.status||'Not Started')}</span></td><td>${openCO(p.id)}</td></tr>`}).join('')}</tbody></table></div>`}
@@ -1076,7 +1091,7 @@ body.dashboard-mode .content-head{display:none}
       async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
       
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.29 Dashboard due-date filter fix</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.30 Dashboard date-range picker style</p></div>`}
       
       async function bootstrapAuth(){
         try{
