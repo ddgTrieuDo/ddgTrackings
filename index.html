@@ -436,7 +436,7 @@ body.dashboard-mode .content-head{display:none}
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.30 · Dashboard date-range picker style</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.31 · Dashboard end-date display fix</div>
     </div>
   </section>
 
@@ -576,7 +576,7 @@ body.dashboard-mode .content-head{display:none}
       function dashboardOptions(field){return [...new Set(state.projects.map(p=>String(p?.[field]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
       function isoLocalDate(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`}
       function fmtDashDate(value){if(!value)return '—';const d=new Date(value);if(Number.isNaN(d.getTime()))return esc(value);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
-      function formatDashRangeValue(from,to){if(!from&&!to)return '';const parts=[];if(from){const d=new Date(`${from}T00:00:00`);parts.push(Number.isNaN(d.getTime())?from:d.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}))}if(to){const d=new Date(`${to}T00:00:00`);parts.push(Number.isNaN(d.getTime())?to:d.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}))}return parts.join(' — ')}
+      function formatDashRangeValue(from,to){const ph='mm/dd/yyyy';const fmtOne=v=>{const d=new Date(`${v}T00:00:00`);return Number.isNaN(d.getTime())?v:d.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'})};if(!from&&!to)return '';if(from&&!to)return `${fmtOne(from)} — ${ph}`;if(!from&&to)return `${ph} — ${fmtOne(to)}`;return `${fmtOne(from)} — ${fmtOne(to)}`}
       function dashStatusText(value){return String(value||'Not Started')}
       function dashStatusClass(value){const s=String(value||'').toLowerCase();if(s.includes('track')||s.includes('approved')||s.includes('complete'))return 'good';if(s.includes('risk')||s.includes('pending')||s.includes('hold'))return 'warn';if(s.includes('over')||s.includes('reject'))return 'bad';return 'neutral'}
       function dashboardFilteredProjects(){
@@ -616,12 +616,13 @@ body.dashboard-mode .content-head{display:none}
       function initDashboardDatePicker(){
         const el=$('#dashDateRange');
         if(!el) return;
+        el.value=formatDashRangeValue(state.dashboardFilters?.dueFrom,state.dashboardFilters?.dueTo);
         const defaults=[];
         if(state.dashboardFilters?.dueFrom) defaults.push(state.dashboardFilters.dueFrom);
         if(state.dashboardFilters?.dueTo) defaults.push(state.dashboardFilters.dueTo);
         if(window._dashDatePicker && typeof window._dashDatePicker.destroy==='function'){try{window._dashDatePicker.destroy()}catch(_){}}
         if(typeof window.flatpickr==='function'){
-          window._dashDatePicker=window.flatpickr(el,{mode:'range',dateFormat:'m/d/Y',defaultDate:defaults,disableMobile:true,locale:{rangeSeparator:' — '},allowInput:false,clickOpens:true,onClose:(selectedDates)=>{state.dashboardFilters.dueFrom=selectedDates[0]?isoLocalDate(selectedDates[0]):'';state.dashboardFilters.dueTo=selectedDates[1]?isoLocalDate(selectedDates[1]):'';renderDashboard();}});
+          window._dashDatePicker=window.flatpickr(el,{mode:'range',dateFormat:'m/d/Y',defaultDate:defaults,disableMobile:true,locale:{rangeSeparator:' — '},allowInput:false,clickOpens:true,closeOnSelect:false,onChange:(selectedDates,_dateStr,instance)=>{const from=selectedDates[0]?isoLocalDate(selectedDates[0]):'';const to=selectedDates[1]?isoLocalDate(selectedDates[1]):'';instance.input.value=formatDashRangeValue(from,to);if(selectedDates.length===2){state.dashboardFilters.dueFrom=from;state.dashboardFilters.dueTo=to;setTimeout(()=>renderDashboard(),0)}} ,onClose:(selectedDates)=>{state.dashboardFilters.dueFrom=selectedDates[0]?isoLocalDate(selectedDates[0]):'';state.dashboardFilters.dueTo=selectedDates[1]?isoLocalDate(selectedDates[1]):'';if(!selectedDates.length||selectedDates.length===1)renderDashboard();}});
         }
         const clearBtn=$('#dashDateClear');
         if(clearBtn) clearBtn.onclick=()=>{state.dashboardFilters.dueFrom='';state.dashboardFilters.dueTo='';if(window._dashDatePicker && typeof window._dashDatePicker.clear==='function')window._dashDatePicker.clear();renderDashboard()};
@@ -1091,7 +1092,7 @@ body.dashboard-mode .content-head{display:none}
       async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
       
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.30 Dashboard date-range picker style</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.31 Dashboard end-date display fix</p></div>`}
       
       async function bootstrapAuth(){
         try{
