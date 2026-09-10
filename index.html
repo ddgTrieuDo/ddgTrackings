@@ -421,6 +421,8 @@ body.dashboard-mode .content-head{display:none}
 .dash-chart-legend .swatch.used{background:#316df1}
 .dash-chart-row{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center;margin:22px 0}
 .dash-chart-name{font-size:12px;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-chart-name .project-link{font-size:12px;font-weight:400;color:#0b5bd3;cursor:pointer}
+.project-link{position:relative;z-index:2;pointer-events:auto!important}
 .dash-chart-bars{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .dash-chart-track{position:relative;height:30px}
 .dash-chart-bar{height:9px;border-radius:1px}
@@ -440,7 +442,7 @@ body.dashboard-mode .content-head{display:none}
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.34 · Separate start/end due-date fields</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.35 · Separate start/end due-date fields</div>
     </div>
   </section>
 
@@ -562,9 +564,9 @@ body.dashboard-mode .content-head{display:none}
         const assignedIds=new Set(state.members.filter(m=>m.user_id===state.profile?.id).map(m=>m.project_id));
         return state.projects.filter(p=>assignedIds.has(p.id));
       }
-      function projectLink(p){if(!p)return '—';return canManageProject(p.id)?`<button type="button" class="project-link" data-open-project="${p.id}" onclick="openProjectSetup('${p.id}');return false;">${esc(p.name)}</button>`:esc(p.name)}
+      function projectLink(p){if(!p)return '—';return canManageProject(p.id)?`<button type="button" class="project-link" data-open-project="${p.id}">${esc(p.name)}</button>`:esc(p.name)}
       function openProjectSetup(pid){if(!canManageProject(pid))return;state.setupProjectId=pid;state.jobsTab='setup';state.page='jobs';$$('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page==='jobs'));$$('.page').forEach(p=>p.classList.add('hidden'));const target=$('#page-jobs');if(target)target.classList.remove('hidden');render()}
-      function hookProjectOpenLinks(root=document){root.querySelectorAll('[data-open-project]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();openProjectSetup(b.dataset.openProject)})}
+      function hookProjectOpenLinks(root=document){if(root.__ddgProjectLinkHooked)return;root.addEventListener('click',e=>{const b=e.target&&e.target.closest?e.target.closest('[data-open-project]'):null;if(!b)return;if(root!==document&&!root.contains(b))return;e.preventDefault();e.stopPropagation();openProjectSetup(b.dataset.openProject)});root.__ddgProjectLinkHooked=true}
       async function safe(table,query='*'){try{const {data,error}=await sb.from(table).select(query);if(error)throw error;return data||[]}catch(e){console.warn(table,e);return[]}}
       async function loadAll(){setSync('Loading...');const [projects,tasks,profiles,members,assignees,timeEntries,phaseBudgets,changeOrders,devices,leaveRequests,shifts,specialDays,screenshots,dailyProgress]=await Promise.all([
        safe('projects'),safe('tasks'),safe('profiles'),safe('project_members'),safe('task_assignees'),safe('time_entries'),safe('project_phase_budgets'),safe('change_orders'),safe('devices'),safe('leave_requests'),safe('work_shift_settings'),safe('special_work_days'),safe('screenshots'),safe('task_progress_daily')]);
@@ -618,7 +620,7 @@ body.dashboard-mode .content-head{display:none}
       function renderDashboardClassicChart(projects){
         const rows=projects.slice().sort((a,b)=>(originalHours(b.id)+approvedHours(b.id))-(originalHours(a.id)+approvedHours(a.id))).slice(0,5);
         const max=Math.max(1,...rows.map(p=>Math.max(originalHours(p.id)+approvedHours(p.id),projectHours(p.id))));
-        return `<div class="dash-chart"><div class="dash-chart-legend"><span><i class="swatch est"></i> Estimated Hours</span><span><i class="swatch used"></i> Used Hours</span></div>${rows.map(p=>{const est=originalHours(p.id)+approvedHours(p.id),used=projectHours(p.id),estPct=est/max*100,usedPct=used/max*100;return `<div class="dash-chart-row"><div class="dash-chart-name">${esc(p.name)}</div><div class="dash-chart-bars"><div class="dash-chart-track"><div class="dash-chart-bar est" style="width:${estPct}%"></div><div class="dash-chart-bar used" style="width:${usedPct}%"></div></div><div class="dash-chart-values"><div>${fmt(est)}</div><div>${fmt(used)}</div></div></div></div>`}).join('')||'<div class="muted small">No data.</div>'}</div>`;
+        return `<div class="dash-chart"><div class="dash-chart-legend"><span><i class="swatch est"></i> Estimated Hours</span><span><i class="swatch used"></i> Used Hours</span></div>${rows.map(p=>{const est=originalHours(p.id)+approvedHours(p.id),used=projectHours(p.id),estPct=est/max*100,usedPct=used/max*100;return `<div class="dash-chart-row"><div class="dash-chart-name">${projectLink(p)}</div><div class="dash-chart-bars"><div class="dash-chart-track"><div class="dash-chart-bar est" style="width:${estPct}%"></div><div class="dash-chart-bar used" style="width:${usedPct}%"></div></div><div class="dash-chart-values"><div>${fmt(est)}</div><div>${fmt(used)}</div></div></div></div>`}).join('')||'<div class="muted small">No data.</div>'}</div>`;
       }
       function initDashboardDatePicker(){
         const fromEl=$('#dashDueFromText'),toEl=$('#dashDueToText');
@@ -1124,7 +1126,7 @@ body.dashboard-mode .content-head{display:none}
       async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
       
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.34 Separate start/end due-date fields</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.35 Separate start/end due-date fields</p></div>`}
       
       async function bootstrapAuth(){
         try{
