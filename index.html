@@ -372,8 +372,8 @@ body.dashboard-mode .content-head{display:none}
 .dashboard-filter-grid .field select,.dashboard-filter-grid .field input,.dashboard-filter-bottom .field input{border:1px solid #aeb7c4;border-radius:1px;padding:6px 8px;min-height:28px;background:#fff}
 .dash-date-range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .dash-date-item{display:flex;align-items:center;gap:6px}
-.dash-date-item input[type="checkbox"]{margin:0;flex:0 0 auto}
-.dash-date-item input[type="date"]{width:100%;min-width:0}
+.dash-date-item input[type="checkbox"]{margin:0;flex:0 0 16px;width:16px;min-width:16px;max-width:16px;height:16px;padding:0;border:1px solid #9aa5b1;background:#fff;appearance:auto;-webkit-appearance:checkbox}
+.dash-date-item input[type="date"]{flex:1 1 auto;width:auto;min-width:0}
 .dashboard-filter-bottom{display:grid;grid-template-columns:minmax(260px,1fr) 320px;gap:16px;align-items:end}
 .dashboard-update-info{font-size:13px;color:#111827;padding-top:2px}
 .dash-search-field{justify-self:end;width:100%;max-width:320px}
@@ -433,7 +433,7 @@ body.dashboard-mode .content-head{display:none}
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.28 · Dashboard synced closer to Desktop app</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.29 · Dashboard due-date filter fix</div>
     </div>
   </section>
 
@@ -1076,7 +1076,7 @@ body.dashboard-mode .content-head{display:none}
       async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
       
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.28 Dashboard synced closer to Desktop app</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.29 Dashboard due-date filter fix</p></div>`}
       
       async function bootstrapAuth(){
         try{
