@@ -357,6 +357,73 @@ button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .grid.three-col{grid-template-columns:1fr!important}
 }
 
+
+
+/* Web 4.28 - Dashboard page aligned closer to Desktop app */
+body.dashboard-mode .content-head{display:none}
+#page-dashboard{padding:14px 24px 28px}
+.dashboard-classic{display:flex;flex-direction:column;gap:12px}
+.dashboard-page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.dashboard-page-head h2{margin:0;font-size:24px;line-height:1.1;font-weight:800;color:#0f172a}
+.dashboard-page-sub{margin-top:4px;font-size:13px;color:#334155}
+.dashboard-page-head .primary{padding:8px 16px;border-radius:2px}
+.dashboard-filter-grid{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:12px;align-items:end}
+.dashboard-filter-grid .field label,.dashboard-filter-bottom .field label{font-size:11px;font-weight:800;color:#111827;margin-bottom:4px}
+.dashboard-filter-grid .field select,.dashboard-filter-grid .field input,.dashboard-filter-bottom .field input{border:1px solid #aeb7c4;border-radius:1px;padding:6px 8px;min-height:28px;background:#fff}
+.dash-date-range{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dash-date-item{display:flex;align-items:center;gap:6px}
+.dash-date-item input[type="checkbox"]{margin:0;flex:0 0 auto}
+.dash-date-item input[type="date"]{width:100%;min-width:0}
+.dashboard-filter-bottom{display:grid;grid-template-columns:minmax(260px,1fr) 320px;gap:16px;align-items:end}
+.dashboard-update-info{font-size:13px;color:#111827;padding-top:2px}
+.dash-search-field{justify-self:end;width:100%;max-width:320px}
+.dashboard-kpis{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:8px}
+.dashboard-kpi{background:#fff;border:1px solid #d6dde8;border-radius:12px;padding:12px 14px;min-height:78px;position:relative;overflow:hidden}
+.dashboard-kpi::before{content:"";position:absolute;inset:0 auto 0 0;width:4px;background:#2f6fed}
+.dashboard-kpi.amber::before{background:#e49a12}
+.dashboard-kpi.red::before{background:#e23b49}
+.dashboard-kpi.dark::before{background:#111827}
+.dashboard-kpi.blue2::before{background:#6ea3ff}
+.dashboard-kpi-label{font-size:12px;color:#1f2937;margin-bottom:10px}
+.dashboard-kpi-value{font-size:23px;font-weight:800;color:#0f172a}
+.dashboard-block{display:flex;flex-direction:column;gap:6px}
+.dashboard-bottom-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch}
+.dashboard-block-title{font-size:15px;font-weight:800;color:#4f7cff}
+.dashboard-block.small .dash-table-wrap,.dashboard-block.small .dash-chart{min-height:294px}
+.dash-table-wrap{border:1px solid #8f99a6;border-radius:0;background:#fff;overflow:auto}
+.dash-table{width:max-content!important;min-width:100%!important;border-collapse:collapse;table-layout:auto!important}
+.dash-table th,.dash-table td{font-size:12px;padding:5px 6px;border-right:1px solid #dbe2ea;border-bottom:1px solid #dbe2ea;white-space:nowrap!important;vertical-align:middle;max-width:none!important;overflow:visible!important;text-overflow:clip!important}
+.dash-table th{background:#fff;color:#111827;font-weight:700;position:sticky;top:0;z-index:1}
+.dash-table td .project-link{font-weight:400}
+.dash-small-table th,.dash-small-table td{font-size:12px}
+.dash-inline-metric{display:flex;align-items:center;gap:8px;min-width:110px}
+.dash-inline-metric b{font-weight:700;color:#111827}
+.dash-mini-bar{width:80px;height:10px;border-radius:1px;background:#edf1f5;display:inline-block;overflow:hidden;border:1px solid #e6ebf1}
+.dash-mini-bar i{display:block;height:100%;background:#3f7cff}
+.dash-mini-bar.dash-budget i{background:#34b36b}
+.dash-status{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.dash-status.good{color:#0f9f63}
+.dash-status.warn{color:#111827}
+.dash-status.bad{color:#d92f42}
+.dash-status.neutral{color:#111827}
+.dash-status-dot{font-size:11px;line-height:1}
+.dash-chart{border:1px solid #8f99a6;background:#fff;min-height:294px;padding:12px 14px}
+.dash-chart-legend{display:flex;gap:28px;align-items:center;margin-bottom:18px;font-size:12px;color:#111827;flex-wrap:wrap}
+.dash-chart-legend .swatch{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:middle}
+.dash-chart-legend .swatch.est{background:#7fa7ff}
+.dash-chart-legend .swatch.used{background:#316df1}
+.dash-chart-row{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;align-items:center;margin:22px 0}
+.dash-chart-name{font-size:12px;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-chart-bars{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.dash-chart-track{position:relative;height:30px}
+.dash-chart-bar{height:9px;border-radius:1px}
+.dash-chart-bar.est{background:#7fa7ff;position:absolute;top:2px;left:0}
+.dash-chart-bar.used{background:#316df1;position:absolute;top:16px;left:0}
+.dash-chart-values{font-size:12px;color:#111827;min-width:48px;text-align:left;line-height:1.4}
+@media(max-width:1400px){.dashboard-kpis{grid-template-columns:repeat(3,minmax(130px,1fr))}.dashboard-filter-grid{grid-template-columns:repeat(3,minmax(170px,1fr))}.dashboard-filter-bottom{grid-template-columns:1fr}.dash-search-field{justify-self:start;max-width:360px}.dashboard-bottom-row{grid-template-columns:1fr}}
+@media(max-width:900px){#page-dashboard{padding:12px 14px 20px}.dashboard-page-head{flex-wrap:wrap}.dashboard-filter-grid{grid-template-columns:1fr 1fr}.dash-date-range{grid-template-columns:1fr}.dashboard-kpis{grid-template-columns:1fr 1fr}.dash-chart-row{grid-template-columns:1fr}.dash-chart-name{white-space:normal}.dashboard-bottom-row{grid-template-columns:1fr}}
+@media(max-width:640px){.dashboard-filter-grid,.dashboard-kpis{grid-template-columns:1fr}.dashboard-filter-bottom{grid-template-columns:1fr}.dash-search-field{max-width:none}}
+
 </style>
 </head>
 <body>
@@ -366,7 +433,7 @@ button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.27 · Layout Hardening / No Overlap</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.28 · Dashboard synced closer to Desktop app</div>
     </div>
   </section>
 
@@ -470,7 +537,7 @@ button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         '9. QC / Final Review',
         '10. As-Built / Closeout'
       ];
-      const state={profile:null,page:'dashboard',jobsTab:'setup',tasksTab:'mine',attendanceTab:'live',setupProjectId:'',projects:[],tasks:[],profiles:[],members:[],assignees:[],timeEntries:[],phaseBudgets:[],changeOrders:[],devices:[],leaveRequests:[],shifts:[],specialDays:[],screenshots:[],dailyProgress:[]};
+      const state={profile:null,page:'dashboard',jobsTab:'setup',tasksTab:'mine',attendanceTab:'live',setupProjectId:'',projects:[],tasks:[],profiles:[],members:[],assignees:[],timeEntries:[],phaseBudgets:[],changeOrders:[],devices:[],leaveRequests:[],shifts:[],specialDays:[],screenshots:[],dailyProgress:[],dashboardFilters:{pm:'All',customer:'All',status:'All',office:'All',search:'',dueFrom:'',dueTo:'',useDueFrom:false,useDueTo:false}};
       const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
       const esc=(v='')=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
       const num=v=>Number(v)||0; const fmt=v=>num(v).toFixed(2); const fmtTime=h=>`${Math.floor(num(h))}:${String(Math.round((num(h)%1)*60)).padStart(2,'0')}`;
@@ -500,7 +567,47 @@ button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       function originalHours(pid){return state.phaseBudgets.filter(x=>x.project_id===pid).reduce((s,x)=>s+num(x.estimated_hours),0)}
       function approvedHours(pid){return state.changeOrders.filter(x=>x.project_id===pid&&String(x.status).toLowerCase()==='approved').reduce((s,x)=>s+num(x.approved_hours??x.requested_hours),0)}
       function openCO(pid){return state.changeOrders.filter(x=>x.project_id===pid&&!['approved','rejected'].includes(String(x.status).toLowerCase())).length}
+      
       function statusClass(s){s=String(s||'').toLowerCase();return s.includes('approved')||s.includes('track')||s.includes('done')||s==='tracking'?'good':s.includes('pending')||s.includes('progress')||s.includes('risk')?'warn':s.includes('reject')||s.includes('over')||s.includes('offline')?'bad':''}
+      function dashboardOptions(field){return [...new Set(state.projects.map(p=>String(p?.[field]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b))}
+      function fmtDashDate(value){if(!value)return '—';const d=new Date(value);if(Number.isNaN(d.getTime()))return esc(value);return d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}
+      function dashStatusText(value){return String(value||'Not Started')}
+      function dashStatusClass(value){const s=String(value||'').toLowerCase();if(s.includes('track')||s.includes('approved')||s.includes('complete'))return 'good';if(s.includes('risk')||s.includes('pending')||s.includes('hold'))return 'warn';if(s.includes('over')||s.includes('reject'))return 'bad';return 'neutral'}
+      function dashboardFilteredProjects(){
+        const f=state.dashboardFilters||{};
+        const q=String(f.search||'').trim().toLowerCase();
+        return state.projects.filter(p=>{
+          const due=p?.due_date?new Date(p.due_date):null;
+          const fromOk=!f.useDueFrom||(due&&!Number.isNaN(due.getTime())&&due>=new Date(f.dueFrom));
+          const toLimit=f.dueTo?new Date(`${f.dueTo}T23:59:59`):null;
+          const toOk=!f.useDueTo||(due&&toLimit&&!Number.isNaN(due.getTime())&&due<=toLimit);
+          const searchOk=!q||[
+            p.name,p.customer,p.project_manager,p.current_phase,p.office,p.job_number,p.package_no,p.status
+          ].filter(Boolean).some(v=>String(v).toLowerCase().includes(q));
+          return (f.pm==='All'||(p.project_manager||'')===f.pm)
+            && (f.customer==='All'||(p.customer||'')===f.customer)
+            && (f.status==='All'||dashStatusText(p.status)===f.status)
+            && (f.office==='All'||(p.office||'')===f.office)
+            && fromOk && toOk && searchOk;
+        });
+      }
+      function dashboardProjectIds(projects){return new Set(projects.map(p=>p.id))}
+      function dashboardPendingCount(projectIds){return state.changeOrders.filter(c=>projectIds.has(c.project_id)&&String(c.status||'').toLowerCase()==='pending').length}
+      function dashboardUnapprovedHours(projectIds){return state.changeOrders.filter(c=>projectIds.has(c.project_id)&&String(c.status||'').toLowerCase()==='pending').reduce((s,c)=>s+num(c.requested_hours),0)}
+      function dashboardAttentionProjects(projects, projectIds){return projects.filter(p=>['At Risk','Over Hours','On Hold'].includes(p.status)||openCO(p.id))}
+      function dashboardChangeOrderRows(projectIds){return state.changeOrders.filter(c=>projectIds.has(c.project_id)).sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,12)}
+      function dashboardProgressCell(percent){const pct=Math.max(0,Math.min(100,num(percent)));return `<div class="dash-inline-metric"><span class="dash-mini-bar"><i style="width:${pct}%"></i></span><b>${pct.toFixed(0)}%</b></div>`}
+      function dashboardBudgetCell(used, revised){const pct=revised?Math.max(0,Math.min(999,used/revised*100)):0;return `<div class="dash-inline-metric"><span class="dash-mini-bar dash-budget"><i style="width:${Math.min(100,pct)}%"></i></span><b>${pct.toFixed(0)}%</b></div>`}
+      function dashboardStatusPill(status){const cls=dashStatusClass(status);const dot=cls==='good'?'●':cls==='warn'?'●':cls==='bad'?'●':'●';return `<span class="dash-status ${cls}"><span class="dash-status-dot">${dot}</span>${esc(dashStatusText(status))}</span>`}
+      function dashboardPortfolioTable(projects){
+        return `<div class="table-wrap dash-table-wrap"><table class="table dash-table"><thead><tr><th>Project</th><th>Customers</th><th>Project Manager</th><th>Current Phase</th><th>Due</th><th>Original Hours</th><th>Original Used</th><th>Approved CO Hours</th><th>CO Hours Used</th><th>Revised Hours</th><th>Hours Used</th><th>Over Approved</th><th>Remaining Hours</th><th>Overall Progress</th><th>Budget Used %</th><th>Status</th><th>Open COs</th></tr></thead><tbody>${projects.map(p=>{const o=originalHours(p.id),a=approvedHours(p.id),u=projectHours(p.id),r=o+a,rem=Math.max(0,r-u),over=Math.max(0,u-r),origUsed=Math.min(u,o),coUsed=Math.max(0,u-o);return `<tr><td>${projectLink(p)}</td><td>${esc(p.customer||'—')}</td><td>${esc(p.project_manager||'—')}</td><td>${esc(p.current_phase||'—')}</td><td>${fmtDashDate(p.due_date)}</td><td>${fmt(o)}</td><td>${fmt(origUsed)}</td><td>${fmt(a)}</td><td>${fmt(coUsed)}</td><td>${fmt(r)}</td><td>${fmt(u)}</td><td>${fmt(over)}</td><td>${fmt(rem)}</td><td>${dashboardProgressCell(num(p.overall_progress))}</td><td>${dashboardBudgetCell(u,r)}</td><td>${dashboardStatusPill(p.status)}</td><td>${openCO(p.id)}</td></tr>`}).join('')||'<tr><td colspan="17" class="muted">No projects found.</td></tr>'}</tbody></table></div>`;
+      }
+      function renderDashboardClassicChart(projects){
+        const rows=projects.slice().sort((a,b)=>(originalHours(b.id)+approvedHours(b.id))-(originalHours(a.id)+approvedHours(a.id))).slice(0,5);
+        const max=Math.max(1,...rows.map(p=>Math.max(originalHours(p.id)+approvedHours(p.id),projectHours(p.id))));
+        return `<div class="dash-chart"><div class="dash-chart-legend"><span><i class="swatch est"></i> Estimated Hours</span><span><i class="swatch used"></i> Used Hours</span></div>${rows.map(p=>{const est=originalHours(p.id)+approvedHours(p.id),used=projectHours(p.id),estPct=est/max*100,usedPct=used/max*100;return `<div class="dash-chart-row"><div class="dash-chart-name">${esc(p.name)}</div><div class="dash-chart-bars"><div class="dash-chart-track"><div class="dash-chart-bar est" style="width:${estPct}%"></div><div class="dash-chart-bar used" style="width:${usedPct}%"></div></div><div class="dash-chart-values"><div>${fmt(est)}</div><div>${fmt(used)}</div></div></div></div>`}).join('')||'<div class="muted small">No data.</div>'}</div>`;
+      }
+
       function modal(title,html,onSave,saveText='Save'){ $('#modal').innerHTML=`<h3>${esc(title)}</h3>${html}<div class="modal-actions"><button id="mCancel">Cancel</button>${onSave?`<button id="mSave" class="primary">${esc(saveText)}</button>`:''}</div>`;$('#modalBackdrop').classList.remove('hidden');$('#mCancel').onclick=closeModal;if(onSave)$('#mSave').onclick=onSave} function closeModal(){$('#modalBackdrop').classList.add('hidden')}
       
       async function getProfile(user){const {data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();return data||{id:user.id,email:user.email,display_name:user.email,role:'Employee'}}
@@ -573,14 +680,53 @@ button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       $('#logoutBtn').onclick=async()=>{await sb.auth.signOut();location.reload()};$('#reloadBtn').onclick=loadAll;
       $$('.nav-btn[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;$$('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.add('hidden'));$(`#page-${state.page}`).classList.remove('hidden');render()});
       
-      function render(){const titles={dashboard:['Dashboard','Project portfolio overview'],jobs:['Jobs','Project setup, list, change orders and project time'],tasks:['Tasks','My work and task management'],production:['Production','Task production progress'],screenshots:['Screenshots','Cloud screenshots from Tracking desktop agent'],attendance:['Attendance','Live team, leave, schedules and leave balances'],monitor:['Team Monitor','Employee screenshots by date'],employees:['Employees','Employee accounts, roles and leave balances'],settings:['Settings','Web portal preferences'],about:['About','DDG Tracking Web']};const t=titles[state.page]||['Tracking',''];$('#pageTitle').textContent=t[0];$('#pageSubtitle').textContent=t[1];({dashboard:renderDashboard,jobs:renderJobs,tasks:renderTasks,production:renderProduction,screenshots:renderScreenshots,attendance:renderAttendance,monitor:renderMonitor,employees:renderEmployees,settings:renderSettings,about:renderAbout}[state.page]||(()=>{}))();hookProjectOpenLinks(document)}
+      function render(){const titles={dashboard:['Dashboard','Project portfolio overview'],jobs:['Jobs','Project setup, list, change orders and project time'],tasks:['Tasks','My work and task management'],production:['Production','Task production progress'],screenshots:['Screenshots','Cloud screenshots from Tracking desktop agent'],attendance:['Attendance','Live team, leave, schedules and leave balances'],monitor:['Team Monitor','Employee screenshots by date'],employees:['Employees','Employee accounts, roles and leave balances'],settings:['Settings','Web portal preferences'],about:['About','DDG Tracking Web']};const t=titles[state.page]||['Tracking',''];$('#pageTitle').textContent=t[0];$('#pageSubtitle').textContent=t[1];document.body.classList.toggle('dashboard-mode',state.page==='dashboard');({dashboard:renderDashboard,jobs:renderJobs,tasks:renderTasks,production:renderProduction,screenshots:renderScreenshots,attendance:renderAttendance,monitor:renderMonitor,employees:renderEmployees,settings:renderSettings,about:renderAbout}[state.page]||(()=>{}))();hookProjectOpenLinks(document)}
       
-      function renderDashboard(){const active=state.projects.length,atRisk=state.projects.filter(p=>p.status==='At Risk').length,over=state.projects.filter(p=>projectHours(p.id)>originalHours(p.id)+approvedHours(p.id)&&originalHours(p.id)+approvedHours(p.id)>0).length,hold=state.projects.filter(p=>p.status==='On Hold').length,pending=state.changeOrders.filter(c=>String(c.status).toLowerCase()==='pending').length,unapproved=state.changeOrders.filter(c=>String(c.status).toLowerCase()==='pending').reduce((s,c)=>s+num(c.requested_hours),0);const attention=state.projects.filter(p=>['At Risk','Over Hours','On Hold'].includes(p.status)||openCO(p.id));const coRows=[...state.changeOrders].sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0)).slice(0,12);
-       $('#page-dashboard').innerHTML=`<div class="grid kpis">${[['Active Projects',active],['Projects At Risk',atRisk],['Projects Over Hours',over],['Projects On Hold',hold],['Pending Change Orders',pending],['Unapproved Hours',fmt(unapproved)]].map(x=>`<div class="kpi"><div class="label">${x[0]}</div><div class="value">${x[1]}</div></div>`).join('')}</div>
-       <div class="card"><div class="section-title">Project Portfolio (${state.projects.length} Projects)</div>${projectPortfolioTable()}</div>
-       <div class="grid three-col" style="margin-top:12px"><div class="card"><div class="section-title">Projects Requiring Attention</div><div class="table-wrap"><table class="table"><thead><tr><th>Project</th><th>Main Issue</th><th>Progress</th><th>Status</th></tr></thead><tbody>${attention.map(p=>`<tr><td>${projectLink(p)}</td><td>${openCO(p.id)?'Pending Change Order':esc(p.status)}</td><td>${num(p.overall_progress).toFixed(0)}%</td><td>${esc(p.status||'Not Started')}</td></tr>`).join('')}</tbody></table></div></div>
-       <div class="card"><div class="section-title">Change Orders Requiring Action</div><div class="table-wrap"><table class="table"><thead><tr><th>CO</th><th>Project</th><th>Description</th><th>Requested</th><th>Status</th></tr></thead><tbody>${coRows.map(c=>`<tr><td>${esc(c.co_no||'—')}</td><td>${projectLink(pById(c.project_id))}</td><td>${esc(c.description||'')}</td><td>${fmt(c.requested_hours)}</td><td><span class="status ${statusClass(c.status)}">${esc(c.status||'Pending')}</span></td></tr>`).join('')}</tbody></table></div></div>
-       <div class="card"><div class="section-title">Estimated vs Used Hours (Top 5)</div>${state.projects.slice().sort((a,b)=>(originalHours(b.id)+approvedHours(b.id))-(originalHours(a.id)+approvedHours(a.id))).slice(0,5).map(p=>{const est=originalHours(p.id)+approvedHours(p.id),used=projectHours(p.id),pct=est?Math.min(100,used/est*100):0;return`<div style="margin:13px 0"><b>${esc(p.name)}</b><div class="muted small">${fmt(used)} / ${fmt(est)} h</div><div class="progressbar" style="width:100%;margin-top:4px"><i style="width:${pct}%"></i></div></div>`}).join('')}</div></div>`}
+      function renderDashboard(){
+        const filtered=dashboardFilteredProjects();
+        const projectIds=dashboardProjectIds(filtered);
+        const active=filtered.length;
+        const atRisk=filtered.filter(p=>p.status==='At Risk').length;
+        const over=filtered.filter(p=>projectHours(p.id)>originalHours(p.id)+approvedHours(p.id)&&originalHours(p.id)+approvedHours(p.id)>0).length;
+        const hold=filtered.filter(p=>p.status==='On Hold').length;
+        const pending=dashboardPendingCount(projectIds);
+        const unapproved=dashboardUnapprovedHours(projectIds);
+        const attention=dashboardAttentionProjects(filtered,projectIds);
+        const coRows=dashboardChangeOrderRows(projectIds);
+        const f=state.dashboardFilters;
+        $('#page-dashboard').innerHTML=`<div class="dashboard-classic"><div class="dashboard-page-head"><div><h2>DDG Project Dashboard</h2><div class="dashboard-page-sub">Project Portfolio Overview</div></div><button id="classicReloadBtn" class="primary">Reload</button></div>
+        <div class="dashboard-filter-grid">
+          <div class="field"><label>Project Manager</label><select id="dashPm"><option ${f.pm==='All'?'selected':''}>All</option>${dashboardOptions('project_manager').map(v=>`<option value="${esc(v)}" ${f.pm===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+          <div class="field"><label>Customer</label><select id="dashCustomer"><option ${f.customer==='All'?'selected':''}>All</option>${dashboardOptions('customer').map(v=>`<option value="${esc(v)}" ${f.customer===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+          <div class="field"><label>Project Status</label><select id="dashStatus"><option ${f.status==='All'?'selected':''}>All</option>${[...new Set(state.projects.map(p=>dashStatusText(p.status)))].sort((a,b)=>a.localeCompare(b)).map(v=>`<option value="${esc(v)}" ${f.status===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+          <div class="field"><label>Office</label><select id="dashOffice"><option ${f.office==='All'?'selected':''}>All</option>${dashboardOptions('office').map(v=>`<option value="${esc(v)}" ${f.office===v?'selected':''}>${esc(v)}</option>`).join('')}</select></div>
+          <div class="field"><label>Due Date Range</label><div class="dash-date-range"><label class="dash-date-item"><input type="checkbox" id="dashUseFrom" ${f.useDueFrom?'checked':''}><input id="dashDueFrom" type="date" value="${esc(f.dueFrom||'')}" ${f.useDueFrom?'':'disabled'}></label><label class="dash-date-item"><input type="checkbox" id="dashUseTo" ${f.useDueTo?'checked':''}><input id="dashDueTo" type="date" value="${esc(f.dueTo||'')}" ${f.useDueTo?'':'disabled'}></label></div></div>
+        </div>
+        <div class="dashboard-filter-bottom"><div class="dashboard-update-info">Updated at ${new Date().toLocaleTimeString('en-US',{hour12:false})}. ${filtered.length} projects, ${coRows.length} change order.</div><div class="field dash-search-field"><label>Search Projects</label><input id="dashSearch" placeholder="Search..." value="${esc(f.search||'')}"></div></div>
+        <div class="dashboard-kpis">${[
+          ['Active Projects',active,'blue'],
+          ['Projects At Risk',atRisk,'amber'],
+          ['Projects Over Hours',over,'red'],
+          ['Projects On Hold',hold,'dark'],
+          ['Pending Change Orders',pending,'blue2'],
+          ['Unapproved Hours',fmt(unapproved),'red']
+        ].map(x=>`<div class="dashboard-kpi ${x[2]}"><div class="dashboard-kpi-label">${x[0]}</div><div class="dashboard-kpi-value">${x[1]}</div></div>`).join('')}</div>
+        <div class="dashboard-block"><div class="dashboard-block-title">Project Portfolio (${filtered.length} Projects)</div>${dashboardPortfolioTable(filtered)}</div>
+        <div class="dashboard-bottom-row">
+          <div class="dashboard-block small"><div class="dashboard-block-title">Projects Requiring Attention</div><div class="table-wrap dash-table-wrap"><table class="table dash-table dash-small-table"><thead><tr><th>Project</th><th>Main Issue</th><th>Progress</th><th>Status</th></tr></thead><tbody>${attention.map(p=>`<tr><td>${projectLink(p)}</td><td>${openCO(p.id)?'Pending Change Order':esc(dashStatusText(p.status))}</td><td>${dashboardProgressCell(num(p.overall_progress))}</td><td>${dashboardStatusPill(p.status)}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">No projects require attention.</td></tr>'}</tbody></table></div></div>
+          <div class="dashboard-block small"><div class="dashboard-block-title">Change Orders Requiring Action (${pending} pending)</div><div class="table-wrap dash-table-wrap"><table class="table dash-table dash-small-table"><thead><tr><th>CO</th><th>Project</th><th>Description</th><th>Requested Ho...</th><th>Status</th></tr></thead><tbody>${coRows.map(c=>`<tr><td>${esc(c.co_no||'—')}</td><td>${projectLink(pById(c.project_id))}</td><td>${esc(c.description||'')}</td><td>${fmt(c.requested_hours)}</td><td><span class="status ${statusClass(c.status)}">${esc(c.status||'Pending')}</span></td></tr>`).join('')||'<tr><td colspan="5" class="muted">No change orders found.</td></tr>'}</tbody></table></div></div>
+          <div class="dashboard-block small"><div class="dashboard-block-title">Estimated vs Used Hours (Top 5)</div>${renderDashboardClassicChart(filtered)}</div>
+        </div></div>`;
+        const bind=(id,key)=>{const el=$(id);if(el)el.onchange=e=>{state.dashboardFilters[key]=e.target.value;renderDashboard()}};
+        bind('#dashPm','pm');bind('#dashCustomer','customer');bind('#dashStatus','status');bind('#dashOffice','office');
+        const search=$('#dashSearch');if(search)search.oninput=e=>{state.dashboardFilters.search=e.target.value;renderDashboard()};
+        const useFrom=$('#dashUseFrom'), useTo=$('#dashUseTo'), from=$('#dashDueFrom'), to=$('#dashDueTo');
+        if(useFrom)useFrom.onchange=e=>{state.dashboardFilters.useDueFrom=e.target.checked;if(from)from.disabled=!e.target.checked;renderDashboard()};
+        if(useTo)useTo.onchange=e=>{state.dashboardFilters.useDueTo=e.target.checked;if(to)to.disabled=!e.target.checked;renderDashboard()};
+        if(from)from.onchange=e=>{state.dashboardFilters.dueFrom=e.target.value;renderDashboard()};
+        if(to)to.onchange=e=>{state.dashboardFilters.dueTo=e.target.value;renderDashboard()};
+        const rb=$('#classicReloadBtn');if(rb)rb.onclick=()=>loadAll();
+      }
       function projectPortfolioTable(){return `<div class="table-wrap"><table class="table"><thead><tr><th>Project</th><th>Customer</th><th>Project Manager</th><th>Current Phase</th><th>Due</th><th>Original Hours</th><th>Original Used</th><th>Approved CO Hours</th><th>CO Hours Used</th><th>Revised Hours</th><th>Hours Used</th><th>Over Approved</th><th>Remaining Hours</th><th>Overall Progress</th><th>Budget Used %</th><th>Status</th><th>Open COs</th></tr></thead><tbody>${state.projects.map(p=>{const o=originalHours(p.id),a=approvedHours(p.id),u=projectHours(p.id),r=o+a,rem=Math.max(0,r-u),over=Math.max(0,u-r),pct=r?Math.min(999,u/r*100):0;return`<tr><td>${projectLink(p)}</td><td>${esc(p.customer||'—')}</td><td>${esc(p.project_manager||'—')}</td><td>${esc(p.current_phase||'—')}</td><td>${esc(p.due_date||'—')}</td><td>${fmt(o)}</td><td>${fmt(Math.min(u,o))}</td><td>${fmt(a)}</td><td>${fmt(Math.max(0,u-o))}</td><td>${fmt(r)}</td><td>${fmt(u)}</td><td>${fmt(over)}</td><td>${fmt(rem)}</td><td>${num(p.overall_progress).toFixed(0)}%</td><td>${pct.toFixed(0)}%</td><td><span class="status ${statusClass(p.status)}">${esc(p.status||'Not Started')}</span></td><td>${openCO(p.id)}</td></tr>`}).join('')}</tbody></table></div>`}
       
       function tabs(items,active,handler){return `<div class="tabbar">${items.map(([key,label])=>`<button class="tab-btn ${active===key?'active':''}" data-subtab="${key}">${label}</button>`).join('')}</div>`}
@@ -930,7 +1076,7 @@ button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       async function toggleEmployee(uid){const p=prof(uid),next=p?.active===false;if(uid===state.profile.id&&!next)return alert('You cannot deactivate yourself.');const {error}=await sb.from('profiles').update({active:next}).eq('id',uid);if(error)alert(error.message);else loadAll()}
       
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.26 Global No-Overlap Fix</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Web management portal synchronized with the DDG Tracking Windows desktop agent through Supabase.</p><p><b>Shared management features:</b> Dashboard, Project Setup/List/Time, Change Orders, My Tasks, Task Management, Production, Screenshots, Attendance/Leave/Schedules, Team Monitor and Employee Management.</p><p><b>Desktop agent:</b> Start/Stop tracking, keyboard/mouse activity, active applications, automatic screenshots, offline/background tracking and system tray operation.</p><p class="muted">Version Web 4.28 Dashboard synced closer to Desktop app</p></div>`}
       
       async function bootstrapAuth(){
         try{
