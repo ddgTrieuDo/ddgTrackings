@@ -650,9 +650,26 @@ body.dashboard-mode .content-head{display:none}
       function openProjectSetup(pid){if(!canManageProject(pid))return;state.pendingProjectOpenId=pid;state.setupProjectId=pid;state.jobsTab='setup';state.page='jobs';$$('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x.dataset.page==='jobs'));$$('.page').forEach(p=>p.classList.add('hidden'));const target=$('#page-jobs');if(target)target.classList.remove('hidden');render();requestAnimationFrame(()=>{const sel=$('#setupProject');if(sel){sel.value=pid;state.setupProjectId=pid;try{drawSetupForm(pid)}catch(_){}}})}
       function hookProjectOpenLinks(root=document){if(root.__ddgProjectLinkHooked)return;root.addEventListener('click',e=>{const b=e.target&&e.target.closest?e.target.closest('[data-open-project]'):null;if(!b)return;if(root!==document&&!root.contains(b))return;e.preventDefault();e.stopPropagation();openProjectSetup(b.dataset.openProject)});root.__ddgProjectLinkHooked=true}
       async function safe(table,query='*'){try{const {data,error}=await sb.from(table).select(query);if(error)throw error;return data||[]}catch(e){console.warn(table,e);return[]}}
+      async function hydrateProjectPeopleDirectories(){
+        if(!roleIsEmployee()) return;
+        const projectIds=[...new Set(state.tasks.map(t=>t.project_id).filter(Boolean))];
+        if(!projectIds.length) return;
+        const merged=new Map((state.profiles||[]).map(p=>[p.id,p]));
+        for(const pid of projectIds){
+          try{
+            const {data,error}=await sb.rpc('project_member_directory',{p_project_id:pid});
+            if(error) throw error;
+            for(const person of data||[]){
+              if(!person?.id) continue;
+              merged.set(person.id,{...(merged.get(person.id)||{}),...person});
+            }
+          }catch(e){console.warn('project_member_directory',pid,e)}
+        }
+        state.profiles=[...merged.values()];
+      }
       async function loadAll(){setSync('Loading...');const [projects,tasks,profiles,members,assignees,timeEntries,phaseBudgets,changeOrders,devices,leaveRequests,shifts,specialDays,screenshots,dailyProgress,taskStatuses]=await Promise.all([
        safe('projects'),safe('tasks'),safe('profiles'),safe('project_members'),safe('task_assignees'),safe('time_entries'),safe('project_phase_budgets'),safe('change_orders'),safe('devices'),safe('leave_requests'),safe('work_shift_settings'),safe('special_work_days'),safe('screenshots'),safe('task_progress_daily'),safe('task_statuses')]);
-       Object.assign(state,{projects:projects.filter(x=>x.active!==false),tasks:tasks.filter(x=>x.active!==false),profiles,members,assignees,timeEntries,phaseBudgets,changeOrders,devices,leaveRequests,shifts,specialDays,screenshots,dailyProgress,taskStatuses});setSync('Supabase ✓');render();}
+       Object.assign(state,{projects:projects.filter(x=>x.active!==false),tasks:tasks.filter(x=>x.active!==false),profiles,members,assignees,timeEntries,phaseBudgets,changeOrders,devices,leaveRequests,shifts,specialDays,screenshots,dailyProgress,taskStatuses});await hydrateProjectPeopleDirectories();setSync('Supabase ✓');render();}
       function effectiveEntryHours(x){const now=Date.now();if(num(x.duration_seconds)>0)return num(x.duration_seconds)/3600;if(!x.started_at)return 0;const start=new Date(x.started_at).getTime();if(x.ended_at)return Math.max(0,(new Date(x.ended_at).getTime()-start)/3600000);let end=now;if(x.updated_at){const hb=new Date(x.updated_at).getTime();if(Number.isFinite(hb)&&now-hb>30000)end=hb}return Math.max(0,(end-start)/3600000)}
       function taskHours(tid){return state.timeEntries.filter(x=>x.task_id===tid).reduce((s,x)=>s+effectiveEntryHours(x),0)}
       function projectHours(pid){return state.tasks.filter(t=>t.project_id===pid).reduce((s,t)=>s+taskHours(t.id),0)}
@@ -1264,7 +1281,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
       }
       async function toggleEmployee(uid){if(!canManageEmployees())return alert('Only Director/System Admin can change employee status.');const p=prof(uid);if(!p)return;const active=p.active===false;if(!confirm(`${active?'Activate':'Deactivate'} ${nameOf(uid)}?`))return;const {error}=await sb.from('profiles').update({active}).eq('id',uid);if(error)return alert(error.message);await loadAll()}
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.53 Employee Task Assignment Policy</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.54 Employee Display Names</p></div>`}
       
       async function bootstrapAuth(){
         try{
