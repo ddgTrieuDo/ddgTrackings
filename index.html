@@ -259,6 +259,20 @@ button.success:not(:disabled):hover{
   background:#2f6fed;
   color:#fff;
 }
+/* Web 4.51 - selected task row must stay readable even when Near Deadline / Overdue styles also apply. */
+.table tbody tr.selected.manager-near-row td,
+.table tbody tr.selected.manager-overdue-row td,
+#page-tasks .table tbody tr.selected.manager-near-row td,
+#page-tasks .table tbody tr.selected.manager-overdue-row td{
+  background:#2f6fed !important;
+  color:#fff !important;
+}
+.table tbody tr.selected.manager-near-row td .status,
+.table tbody tr.selected.manager-overdue-row td .status,
+#page-tasks .table tbody tr.selected.manager-near-row td .status,
+#page-tasks .table tbody tr.selected.manager-overdue-row td .status{
+  color:#fff !important;
+}
 /* Keep labels and text readable on all action buttons. */
 .management-actions button,
 .toolbar button,
