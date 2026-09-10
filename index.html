@@ -272,7 +272,6 @@ button.success:not(:disabled):hover{
       .task-management-all th:first-child,.task-management-all td:first-child{width:150px}
 
 
-/* Web 4.26 · Global No-Overlap Fix
 /* Web 4.26 - global no-overlap / responsive table safety */
 *{box-sizing:border-box}
 .main,.page,.card,.toolbar,.field,.grid>*{min-width:0}
@@ -301,6 +300,63 @@ button,.btn,.nav-btn{flex-shrink:0}
 @media(max-width:1300px){#page-dashboard .kpis{grid-template-columns:repeat(3,minmax(150px,1fr))}.grid.three-col{grid-template-columns:1fr}.grid.three-col>.card{min-width:0}.table th,.table td{max-width:280px}}
 @media(max-width:760px){#page-dashboard .kpis{grid-template-columns:repeat(2,minmax(130px,1fr))}.table th,.table td{max-width:220px}}
 
+
+
+/* Web 4.27 - layout hardening: never overlap, scroll/wrap instead */
+html,body,#app{max-width:100%;overflow-x:hidden}
+.main,.page,.content-head,.content-head>div,.head-actions,.card,.toolbar,.field,.form-grid>*{min-width:0}
+.content-head{flex-wrap:wrap}
+.content-head>div:first-child{flex:1 1 280px;max-width:100%}
+.head-actions{flex:0 1 auto;justify-content:flex-end}
+.title-brand{min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.toolbar>*{max-width:100%}
+.toolbar .field{flex:0 1 240px}
+.toolbar .field.grow,.toolbar .grow{flex:1 1 260px}
+.field input,.field select,.field textarea{width:100%;max-width:100%;min-width:0}
+.smart-row{flex-wrap:wrap}
+.smart-row>*{min-width:min(150px,100%)}
+.tabbar{max-width:100%;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;scrollbar-gutter:stable;overscroll-behavior-x:contain}
+.tab-btn{flex:0 0 auto}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr))!important}
+.two-col{grid-template-columns:repeat(auto-fit,minmax(min(420px,100%),1fr))}
+.grid.three-col{grid-template-columns:repeat(auto-fit,minmax(min(340px,100%),1fr))!important}
+.grid.three-col>.card{min-width:0!important}
+.task-card-top,.task-card-foot,.task-cards-head{flex-wrap:wrap}
+.task-card-name,.task-card-meta,.notice,.user-summary{max-width:100%;overflow-wrap:anywhere}
+.task-card-grid>div{min-width:0;overflow:hidden}
+
+.table-wrap{width:100%;max-width:100%;min-width:0;overflow-x:auto!important;overflow-y:auto;overscroll-behavior-x:contain;isolation:isolate}
+.table{width:max-content!important;min-width:100%!important;max-width:none!important;table-layout:auto!important}
+.table th,.table td{position:relative;min-width:72px;max-width:340px;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;vertical-align:middle}
+.table th>*:not(button),.table td>*:not(button){max-width:100%}
+.table td:has(>button),.table td:has(.actions),.table td.actions{min-width:160px;max-width:280px;white-space:normal!important;overflow:hidden!important;text-overflow:clip!important;height:auto!important;line-height:1.45}
+.table td:has(>button) button,.table td .actions button{margin:2px 3px 2px 0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.table .progressbar{max-width:calc(100% - 38px)}
+button{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal{max-width:calc(100vw - 24px)}
+.modal-actions{flex-wrap:wrap;row-gap:8px}
+
+/* Long operational tables keep their intended column widths and scroll horizontally. */
+.production-daily-table,.task-management-table,.my-tasks-table,.all-tasks-table,.task-management-all{table-layout:fixed!important}
+.production-daily-table th,.production-daily-table td,
+.task-management-table th,.task-management-table td,
+.my-tasks-table th,.my-tasks-table td,
+.all-tasks-table th,.all-tasks-table td,
+.task-management-all th,.task-management-all td{max-width:none}
+
+#page-employees .table th:nth-child(4),#page-employees .table td:nth-child(4){min-width:210px;max-width:300px}
+#page-employees .table th:last-child,#page-employees .table td:last-child{min-width:180px;max-width:260px;white-space:normal!important}
+
+@media(max-width:760px){
+  .content-head{align-items:stretch}
+  .head-actions{width:100%;justify-content:flex-start}
+  .toolbar .field,.toolbar .field.grow,.toolbar .grow{flex:1 1 100%}
+  .task-card-grid{grid-template-columns:1fr!important}
+  .form-grid{grid-template-columns:1fr!important}
+  .form-grid .span2,.form-grid .span3{grid-column:auto!important}
+  .grid.three-col{grid-template-columns:1fr!important}
+}
+
 </style>
 </head>
 <body>
@@ -310,7 +366,7 @@ button,.btn,.nav-btn{flex-shrink:0}
       <div class="brand-row"><div class="brand-badge">DDG</div><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.26 · Global No-Overlap Fix</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.27 · Layout Hardening / No Overlap</div>
     </div>
   </section>
 
