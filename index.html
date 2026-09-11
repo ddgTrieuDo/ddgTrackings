@@ -165,7 +165,7 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 #page-tasks .table tbody tr:hover td{background:#f7faff}
 @media(max-width:1000px){.app-task-layout{grid-template-columns:1fr}.task-cards-head{flex-direction:column;align-items:stretch}.task-cards-head .field{min-width:0}.task-card-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}}
 
-/* Web 4.63 - Task Management parity + reliable one-level Subtasks */
+/* Web 4.64 - Nested/collapsible Task > Subtask hierarchy */
 .task-status-board{display:flex;flex-direction:column;gap:16px}
 .task-status-table{border-collapse:separate!important;border-spacing:0!important}
 .task-status-divider td{height:auto!important;padding:0!important;border-right:0!important;border-bottom:0!important;background:transparent!important;max-width:none!important;overflow:visible!important}
@@ -185,7 +185,15 @@ button{border:1px solid var(--line);background:#fff;color:#1d2939;padding:7px 12
 #page-tasks .task-status-divider:hover td{background:transparent!important}
 #page-tasks .task-status-divider button:focus-visible{outline:2px solid #84adff;outline-offset:2px}
 @media(max-width:900px){.task-management-toolbar{grid-template-columns:1fr}.task-management-group-note{padding-bottom:0}}
-/* Web 4.63 - Subtasks */
+/* Web 4.64 - Nested Subtasks */
+.task-parent-toggle{display:inline-grid;place-items:center;width:20px;height:20px;min-height:20px!important;padding:0!important;margin:0 4px 0 0;border:0!important;background:transparent!important;color:#667085!important;box-shadow:none!important;vertical-align:middle}
+.task-parent-toggle:hover{background:#eef2f7!important;color:#111827!important}
+.task-parent-toggle-spacer{display:inline-block;width:24px;height:1px;flex:0 0 24px}
+.task-tree-main{display:flex;align-items:center;min-width:0}
+.task-tree-sub{display:flex;align-items:center;gap:6px;padding-left:26px;min-width:0}
+.task-subtask-row td{background:#fbfcfe}
+.task-subtask-row td:first-child{border-left:3px solid #dbe4f0}
+.task-subtask-row.selected td{background:#2f6fed!important;color:#fff!important}
 .task-tree{display:flex;align-items:center;gap:6px;min-width:0}
 .task-tree-main{font-weight:700}
 .task-tree-sub{padding-left:24px;color:#475467}
@@ -1099,7 +1107,9 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
       function taskIsSubtask(task){return !!String(task?.parent_task_id||'').trim()}
       function taskParent(task){return taskIsSubtask(task)?state.tasks.find(x=>x.id===task.parent_task_id)||null:null}
       function taskChildren(task){return state.tasks.filter(x=>x.parent_task_id===task?.id&&x.active!==false)}
-      function taskTreeHtml(task){const parent=taskParent(task);if(parent)return `<div class="task-tree task-tree-sub" title="Subtask of ${esc(parent.name||'Parent Task')}"><span class="task-tree-arrow">↳</span><span>${esc(task.name||'—')}</span></div>`;const count=taskChildren(task).length;return `<div class="task-tree task-tree-main"><span>${esc(task.name||'—')}</span>${count?`<span class="task-tree-count" title="${count} subtask${count===1?'':'s'}">${count}</span>`:''}</div>`}
+      function taskParentCollapsed(scope,parentId){state.taskParentCollapsed??={};return !!state.taskParentCollapsed[scope+'|'+parentId]}
+      function taskTreeHtml(task,scope='manage'){const parent=taskParent(task);if(parent)return `<div class="task-tree task-tree-sub" title="Subtask of ${esc(parent.name||'Parent Task')}"><span class="task-tree-arrow">↳</span><span>${esc(task.name||'—')}</span></div>`;const children=taskChildren(task),count=children.length,collapsed=count?taskParentCollapsed(scope,task.id):false;return `<div class="task-tree task-tree-main">${count?`<button type="button" class="task-parent-toggle" data-task-parent-toggle="${scope}" data-parent-id="${esc(task.id)}" title="${collapsed?'Expand':'Collapse'} subtasks"><span>${collapsed?'▶':'▼'}</span></button>`:'<span class="task-parent-toggle-spacer"></span>'}<span>${esc(task.name||'—')}</span>${count?`<span class="task-tree-count" title="${count} subtask${count===1?'':'s'}">${count}</span>`:''}</div>`}
+      function hookTaskParentToggles(scope,redraw){$$('[data-task-parent-toggle="'+scope+'"]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();const id=b.dataset.parentId||'';if(!id)return;state.taskParentCollapsed??={};const key=scope+'|'+id;state.taskParentCollapsed[key]=!state.taskParentCollapsed[key];redraw()})}
       function taskCountSummary(tasks){const main=tasks.filter(t=>!taskIsSubtask(t)).length,subs=tasks.filter(taskIsSubtask).length;return `${main} task${main===1?'':'s'} • ${subs} subtask${subs===1?'':'s'}`}
       function taskSearchBlob(task){const p=pById(task.project_id),assignees=taskAssigneeNames(task.id).join(', '),parent=taskParent(task);return [p?.customer,p?.office,p?.name,task.name,parent?.name,task.status,taskStatusLabel(task.status),task.phase,task.trade,task.level,task.building,task.system_name,assignees,task.start_date,task.due_date,task.planned_delivery,task.actual_delivery,task.priority].join(' ').toLowerCase()}
       function taskTradeOptions(selected=''){const base=['No trade','Plumbing','Piping','Duct','Fire Protection'];const items=base.includes(selected)||!selected?base:[...base,selected];return items.map(x=>`<option value="${x==='No trade'?'':esc(x)}" ${((selected||'')===x||(!selected&&x==='No trade'))?'selected':''}>${esc(x)}</option>`).join('')}
@@ -1120,28 +1130,38 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
         if(!projects.some(p=>p.id===state.myTasksProjectId))state.myTasksProjectId=projects[0]?.id||'';
         const pid=state.myTasksProjectId||'';
         const projectFilter=(state.myTasksProjectFilter||'').toLowerCase();
-        const taskFilter=(state.myTasksTaskFilter||'').toLowerCase();
+        const taskFilter=(state.myTasksTaskFilter||'').trim().toLowerCase();
         const visibleProjects=projects.filter(p=>!projectFilter||taskSearchBlob({project_id:p.id,name:p.name,status:'',phase:'',trade:'',level:'',building:'',system_name:'',planned_delivery:'',actual_delivery:'',id:''}).includes(projectFilter));
-        const tasks=state.tasks.filter(t=>t.project_id===pid).filter(t=>!taskFilter||taskSearchBlob(t).includes(taskFilter)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
-        if(!tasks.some(t=>t.id===state.myTasksSelectedTaskId))state.myTasksSelectedTaskId=tasks[0]?.id||'';
+        const allTasks=state.tasks.filter(t=>t.project_id===pid);
+        const parentTasks=allTasks.filter(t=>!taskIsSubtask(t)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+        const trees=parentTasks.map(parent=>{const children=allTasks.filter(c=>c.parent_task_id===parent.id).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));const parentMatch=!taskFilter||taskSearchBlob(parent).includes(taskFilter);const matchingChildren=taskFilter?children.filter(c=>taskSearchBlob(c).includes(taskFilter)):children;return{parent,children:matchingChildren,include:parentMatch||matchingChildren.length>0}}).filter(x=>x.include);
+        const orphanSubs=allTasks.filter(t=>taskIsSubtask(t)&&!allTasks.some(p=>p.id===t.parent_task_id)).filter(t=>!taskFilter||taskSearchBlob(t).includes(taskFilter)).map(t=>({parent:t,children:[],include:true}));
+        trees.push(...orphanSubs);
+        const visibleIds=new Set(trees.flatMap(x=>[x.parent.id,...x.children.map(c=>c.id)]));
+        if(state.myTasksSelectedTaskId&&!visibleIds.has(state.myTasksSelectedTaskId))state.myTasksSelectedTaskId=trees[0]?.parent?.id||'';
         const summaryProject=pById(pid);
-        const hours=tasks.reduce((s,t)=>s+taskHours(t.id),0);
-        const statuses=taskStatusOrder(tasks,false);
+        const hours=allTasks.reduce((s,t)=>s+taskHours(t.id),0);
+        const statuses=taskStatusOrder(trees.map(x=>x.parent),false);
         const colSpan=11;
+        const rowHtml=t=>{const as=taskAssigneeNames(t.id),selected=t.id===state.myTasksSelectedTaskId,parent=taskParent(t),scope='mine';return `<tr class="${selected?'selected':''} ${parent?'task-subtask-row':''}" data-my-task-row="${t.id}"><td>${taskTreeHtml(t,scope)}</td><td>${esc(t.phase||'-')}</td><td>${esc(t.trade||'-')}</td><td>${esc(t.system_name||'-')}</td><td>${esc(t.level||'-')}</td><td>${esc(t.building||'-')}</td><td>${taskProgressValue(t)}%</td><td><span class="status ${statusClass(t.status)}">${esc(taskStatusLabel(taskStatusName(t)))}</span></td><td>${fmt(taskHours(t.id))} h</td><td>${as.length}</td><td>${esc(as.join(', ')||'-')}</td></tr>`};
         const groupedBody=statuses.map(status=>{
-          const group=tasks.filter(t=>taskStatusName(t).toLowerCase()===status.toLowerCase());
+          const group=trees.filter(x=>taskStatusName(x.parent).toLowerCase()===status.toLowerCase());
           const collapsed=taskGroupCollapsed('mine',status);
           const color=taskStatusColor(status);
-          const header=`<tr class="task-status-divider"><td colspan="${colSpan}"><div class="task-status-groupbar" style="--task-status-color:${color}"><button type="button" class="task-status-toggle" data-task-status-toggle="mine" data-status="${encodeURIComponent(status)}"><span class="task-status-chevron">${collapsed?'▶':'▼'}</span><span class="task-status-badge">${esc(taskStatusLabel(status))}</span><span class="task-status-count">${group.length}</span></button></div></td></tr>`;
-          const body=collapsed?'':group.map(t=>{const as=taskAssigneeNames(t.id),selected=t.id===state.myTasksSelectedTaskId;return `<tr class="${selected?'selected':''}" data-my-task-row="${t.id}"><td>${taskTreeHtml(t)}</td><td>${esc(t.phase||'-')}</td><td>${esc(t.trade||'-')}</td><td>${esc(t.system_name||'-')}</td><td>${esc(t.level||'-')}</td><td>${esc(t.building||'-')}</td><td>${taskProgressValue(t)}%</td><td><span class="status ${statusClass(t.status)}">${esc(taskStatusLabel(taskStatusName(t)))}</span></td><td>${fmt(taskHours(t.id))} h</td><td>${as.length}</td><td>${esc(as.join(', ')||'-')}</td></tr>`}).join('');
+          const subCount=group.reduce((s,x)=>s+x.children.length,0);
+          const countText=subCount?`${group.length} · ${subCount} sub`:`${group.length}`;
+          const header=`<tr class="task-status-divider"><td colspan="${colSpan}"><div class="task-status-groupbar" style="--task-status-color:${color}"><button type="button" class="task-status-toggle" data-task-status-toggle="mine" data-status="${encodeURIComponent(status)}"><span class="task-status-chevron">${collapsed?'▶':'▼'}</span><span class="task-status-badge">${esc(taskStatusLabel(status))}</span><span class="task-status-count">${countText}</span></button></div></td></tr>`;
+          if(collapsed)return header;
+          const body=group.map(tree=>{const parentHtml=rowHtml(tree.parent);const childHtml=(taskFilter||!taskParentCollapsed('mine',tree.parent.id))?tree.children.map(rowHtml).join(''):'';return parentHtml+childHtml}).join('');
           return header+body;
         }).join('');
-        $('#tasksBody').innerHTML=`<div class="app-task-section"><h2>My Tasks</h2><div class="app-task-layout"><div class="card task-project-column"><div class="field"><label>Select project</label><input id="myProjectSearch" placeholder="Search project" value="${esc(state.myTasksProjectFilter||'')}"></div><div class="task-project-list">${visibleProjects.map(p=>`<button class="task-project-item ${p.id===pid?'active':''}" data-my-project="${p.id}">${esc(p.name)}</button>`).join('')||'<div class="muted">No projects assigned.</div>'}</div><div class="muted small">Tracking starts from the Windows App only. Employees can start only Tasks assigned to them; other Project Tasks are view-only.</div></div><div class="task-cards-column"><div class="task-cards-head"><div><div class="section-title" style="margin-bottom:4px">Tasks by Status</div><div class="muted small">${summaryProject?`${esc(summaryProject.name)} • ${taskCountSummary(tasks)} • ${fmt(hours)} h tracked`:'Select a project'}</div></div><div class="field grow"><label>Search task</label><input id="myTaskSearch" placeholder="Search task" value="${esc(state.myTasksTaskFilter||'')}"></div></div><div class="table-wrap"><table class="table my-tasks-table task-status-table"><thead><tr><th>Task</th><th>Phase</th><th>Trade</th><th>System</th><th>Level</th><th>Building</th><th>% Complete</th><th>Status</th><th>Tracked</th><th>People</th><th>Assignees</th></tr></thead><tbody>${groupedBody||'<tr><td colspan="11" class="muted">No tasks found for this project.</td></tr>'}</tbody></table></div></div></div></div>`;
+        $('#tasksBody').innerHTML=`<div class="app-task-section"><h2>My Tasks</h2><div class="app-task-layout"><div class="card task-project-column"><div class="field"><label>Select project</label><input id="myProjectSearch" placeholder="Search project" value="${esc(state.myTasksProjectFilter||'')}"></div><div class="task-project-list">${visibleProjects.map(p=>`<button class="task-project-item ${p.id===pid?'active':''}" data-my-project="${p.id}">${esc(p.name)}</button>`).join('')||'<div class="muted">No projects assigned.</div>'}</div><div class="muted small">Tracking starts from the Windows App only. Employees can start only Tasks assigned to them; other Project Tasks are view-only.</div></div><div class="task-cards-column"><div class="task-cards-head"><div><div class="section-title" style="margin-bottom:4px">Tasks by Status</div><div class="muted small">${summaryProject?`${esc(summaryProject.name)} • ${taskCountSummary(allTasks)} • ${fmt(hours)} h tracked`:'Select a project'}</div></div><div class="field grow"><label>Search task</label><input id="myTaskSearch" placeholder="Search task" value="${esc(state.myTasksTaskFilter||'')}"></div></div><div class="table-wrap"><table class="table my-tasks-table task-status-table"><thead><tr><th>Task</th><th>Phase</th><th>Trade</th><th>System</th><th>Level</th><th>Building</th><th>% Complete</th><th>Status</th><th>Tracked</th><th>People</th><th>Assignees</th></tr></thead><tbody>${groupedBody||'<tr><td colspan="11" class="muted">No tasks found for this project.</td></tr>'}</tbody></table></div></div></div></div>`;
         $$('[data-my-project]').forEach(b=>b.onclick=()=>{state.myTasksProjectId=b.dataset.myProject;state.myTasksSelectedTaskId='';renderMyTasks()});
         $$('[data-my-task-row]').forEach(r=>r.onclick=()=>{state.myTasksSelectedTaskId=r.dataset.myTaskRow;renderMyTasks()});
         const psearch=$('#myProjectSearch');if(psearch)psearch.oninput=e=>{state.myTasksProjectFilter=e.target.value;renderMyTasks()};
         const tsearch=$('#myTaskSearch');if(tsearch)tsearch.oninput=e=>{state.myTasksTaskFilter=e.target.value;renderMyTasks()};
         hookTaskStatusGroups('mine',renderMyTasks);
+        hookTaskParentToggles('mine',renderMyTasks);
       }
       function updateTaskManagementButtons(pid){
         const allMode=pid==='__all__';
@@ -1168,7 +1188,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
         const summary=allMode
           ? `All: ${allowed.length} project${allowed.length===1?'':'s'}, ${taskCountSummary(allRows)}.`
           : (project?`${esc(project.name)}: ${members.length} members, ${taskCountSummary(allRows)}.`:'No project selected.');
-        $('#tasksBody').innerHTML=`<div class="app-task-section"><h2>Task Management</h2><div class="task-management-toolbar"><div class="field task-project-picker"><label>Project</label><select id="taskProject">${opts}</select></div><div class="field"><label>Search tasks</label><input id="taskManageSearch" placeholder="Search task, phase, assignee..." value="${esc(state.taskManageSearch||'')}"></div><div class="task-management-group-note"><span>Group by:</span><b>Status</b></div></div><div class="muted" style="margin:8px 0 16px">${summary}</div><div class="card management-board"><div class="management-actions"><button id="editTaskBtn" ${state.selectedManagedTaskId?'':'disabled'}>Edit Task</button><button id="newSubtaskBtn" class="task-subtask-btn" disabled>+ Subtask</button><button id="deleteTaskBtn" class="danger" ${state.selectedManagedTaskId?'':'disabled'}>Delete Task</button><button id="newTaskBtn" class="primary" ${allMode||!pid?'disabled':''}>+ New Task</button></div><div id="taskGrid"></div><div id="taskSelectionInfo" class="muted small management-note"></div><div class="muted small management-note">Tasks are grouped by the fixed DDG workflow: Yet to Start → In Progress → For Client Review → On Hold → Cancelled → Waiting for Information → Completed. Director/Manager sees all Projects; Project Lead sees Projects they lead. Select a top-level Task and click + Subtask to create one level of Subtasks. Double-click a Task/Subtask to edit it. If Subtask creation is unavailable, run TASK_SUBTASKS_V2.sql once in Supabase.</div></div></div>`;
+        $('#tasksBody').innerHTML=`<div class="app-task-section"><h2>Task Management</h2><div class="task-management-toolbar"><div class="field task-project-picker"><label>Project</label><select id="taskProject">${opts}</select></div><div class="field"><label>Search tasks</label><input id="taskManageSearch" placeholder="Search task, phase, assignee..." value="${esc(state.taskManageSearch||'')}"></div><div class="task-management-group-note"><span>Group by:</span><b>Status</b></div></div><div class="muted" style="margin:8px 0 16px">${summary}</div><div class="card management-board"><div class="management-actions"><button id="editTaskBtn" ${state.selectedManagedTaskId?'':'disabled'}>Edit Task</button><button id="newSubtaskBtn" class="task-subtask-btn" disabled>+ Subtask</button><button id="deleteTaskBtn" class="danger" ${state.selectedManagedTaskId?'':'disabled'}>Delete Task</button><button id="newTaskBtn" class="primary" ${allMode||!pid?'disabled':''}>+ New Task</button></div><div id="taskGrid"></div><div id="taskSelectionInfo" class="muted small management-note"></div><div class="muted small management-note">Tasks are grouped by the fixed DDG workflow. Subtasks always stay directly under their parent Task, even when a Subtask has a different Status. Use the arrow beside a parent Task to collapse/expand its Subtasks. Director/Manager sees all Projects; Project Lead sees Projects they lead. Select a top-level Task and click + Subtask to create one level of Subtasks.</div></div></div>`;
         const s=$('#taskProject');
         if(s)s.onchange=()=>{state.taskManageProjectId=s.value;state.selectedManagedTaskId='';renderTaskManagement()};
         const search=$('#taskManageSearch');if(search)search.oninput=e=>{state.taskManageSearch=e.target.value;drawTaskGrid(pid)};
@@ -1184,25 +1204,35 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
         const allowedIds=new Set(allowed.map(p=>p.id));
         const allMode=pid==='__all__';
         const q=String(state.taskManageSearch||'').trim().toLowerCase();
-        const rows=state.tasks.filter(t=>allMode?allowedIds.has(t.project_id):t.project_id===pid).filter(t=>!q||taskSearchBlob(t).includes(q)).sort((a,b)=>{
-          if(allMode){const pa=pById(a.project_id)?.name||'',pb=pById(b.project_id)?.name||'';const pc=pa.localeCompare(pb);if(pc)return pc}
-          return String(a.name||'').localeCompare(String(b.name||''));
+        const baseRows=state.tasks.filter(t=>allMode?allowedIds.has(t.project_id):t.project_id===pid);
+        const projectsForRows=allMode?allowed:(pById(pid)?[pById(pid)]:[]);
+        const trees=[];
+        projectsForRows.forEach(project=>{
+          const projectRows=baseRows.filter(t=>t.project_id===project.id);
+          const parents=projectRows.filter(t=>!taskIsSubtask(t)).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+          parents.forEach(parent=>{const children=projectRows.filter(c=>c.parent_task_id===parent.id).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));const parentMatch=!q||taskSearchBlob(parent).includes(q);const matchingChildren=q?children.filter(c=>taskSearchBlob(c).includes(q)):children;if(parentMatch||matchingChildren.length)trees.push({project,parent,children:matchingChildren})});
+          projectRows.filter(t=>taskIsSubtask(t)&&!projectRows.some(p=>p.id===t.parent_task_id)).filter(t=>!q||taskSearchBlob(t).includes(q)).forEach(orphan=>trees.push({project,parent:orphan,children:[]}));
         });
-        const selected=rows.find(t=>t.id===state.selectedManagedTaskId)||null;
+        trees.sort((a,b)=>{if(allMode){const pc=String(a.project.name||'').localeCompare(String(b.project.name||''));if(pc)return pc}return String(a.parent.name||'').localeCompare(String(b.parent.name||''))});
+        const visibleIds=new Set(trees.flatMap(x=>[x.parent.id,...x.children.map(c=>c.id)]));
+        const selected=visibleIds.has(state.selectedManagedTaskId)?state.tasks.find(t=>t.id===state.selectedManagedTaskId)||null:null;
         const info=$('#taskSelectionInfo');
         if(info)info.textContent=selected?`Project: ${pById(selected.project_id)?.name||'—'}  •  ${taskIsSubtask(selected)?'Subtask':'Task'}: ${selected.name}  •  ${!taskIsSubtask(selected)?taskChildren(selected).length+' subtasks  •  ':''}Status: ${taskStatusLabel(taskStatusName(selected))}  •  Tracked: ${fmt(taskHours(selected.id))} h  •  Assigned: ${taskAssigneeNames(selected.id).length} people`:(allMode?'Showing all Tasks from Projects you are allowed to manage.':'Click a Task row to select it.');
         const projectHead=allMode?'<th>Project</th>':'';
         const colSpan=allMode?14:13;
-        const statuses=taskStatusOrder(rows,true);
+        const statuses=TASK_STATUS_STORAGE;
+        const rowHtml=(t,project)=>{const as=taskAssigneeNames(t.id),projectCell=allMode?`<td>${esc(project?.name||pById(t.project_id)?.name||'—')}</td>`:'',di=taskDeadlineInfo(t,7),isSub=taskIsSubtask(t);return `<tr class="${t.id===state.selectedManagedTaskId?'selected':''} ${isSub?'task-subtask-row':''} ${di.kind==='overdue'?'manager-overdue-row':di.kind==='near'?'manager-near-row':''}" data-task-row="${t.id}">${projectCell}<td>${taskTreeHtml(t,'manage')}</td><td><span class="status ${statusClass(t.status)}">${esc(taskStatusLabel(taskStatusName(t)))}</span></td><td>${esc(t.priority||'Normal')}</td><td>${esc(monitorDisplayDate(taskDeadlineValue(t)))}</td><td>${esc(t.phase||'Select phase...')}</td><td>${esc(t.trade||'—')}</td><td>${esc(t.level||'—')}</td><td>${esc(t.building||'—')}</td><td>${esc(t.system_name||'—')}</td><td>${taskProgressValue(t)}%</td><td>${fmt(taskHours(t.id))} h</td><td>${esc(as.join(', ')||'Select people...')}</td><td>${as.length}</td></tr>`};
         const groups=statuses.map(status=>{
-          const group=rows.filter(t=>taskStatusName(t).toLowerCase()===status.toLowerCase());
+          const group=trees.filter(x=>taskStatusName(x.parent).toLowerCase()===status.toLowerCase());
           const collapsed=taskGroupCollapsed('manage',status);
           const color=taskStatusColor(status);
           const add=(!allMode&&pid)?`<button type="button" class="task-status-add" data-add-task-status="${encodeURIComponent(status)}">+ Add Task</button>`:'';
-          const header=`<tr class="task-status-divider"><td colspan="${colSpan}"><div class="task-status-groupbar" style="--task-status-color:${color}"><button type="button" class="task-status-toggle" data-task-status-toggle="manage" data-status="${encodeURIComponent(status)}"><span class="task-status-chevron">${collapsed?'▶':'▼'}</span><span class="task-status-badge">${esc(taskStatusLabel(status))}</span><span class="task-status-count">${group.length}</span></button>${add}</div></td></tr>`;
+          const subCount=group.reduce((s,x)=>s+x.children.length,0);
+          const countText=subCount?`${group.length} · ${subCount} sub`:`${group.length}`;
+          const header=`<tr class="task-status-divider"><td colspan="${colSpan}"><div class="task-status-groupbar" style="--task-status-color:${color}"><button type="button" class="task-status-toggle" data-task-status-toggle="manage" data-status="${encodeURIComponent(status)}"><span class="task-status-chevron">${collapsed?'▶':'▼'}</span><span class="task-status-badge">${esc(taskStatusLabel(status))}</span><span class="task-status-count">${countText}</span></button>${add}</div></td></tr>`;
           if(collapsed)return header;
           if(!group.length)return header+`<tr class="task-status-empty"><td colspan="${colSpan}">No Tasks in this status.</td></tr>`;
-          return header+group.map(t=>{const as=taskAssigneeNames(t.id),projectCell=allMode?`<td>${esc(pById(t.project_id)?.name||'—')}</td>`:'';const di=taskDeadlineInfo(t,7);return `<tr class="${t.id===state.selectedManagedTaskId?'selected':''} ${di.kind==='overdue'?'manager-overdue-row':di.kind==='near'?'manager-near-row':''}" data-task-row="${t.id}">${projectCell}<td>${taskTreeHtml(t)}</td><td><span class="status ${statusClass(t.status)}">${esc(taskStatusLabel(taskStatusName(t)))}</span></td><td>${esc(t.priority||'Normal')}</td><td>${esc(monitorDisplayDate(taskDeadlineValue(t)))}</td><td>${esc(t.phase||'Select phase...')}</td><td>${esc(t.trade||'—')}</td><td>${esc(t.level||'—')}</td><td>${esc(t.building||'—')}</td><td>${esc(t.system_name||'—')}</td><td>${taskProgressValue(t)}%</td><td>${fmt(taskHours(t.id))} h</td><td>${esc(as.join(', ')||'Select people...')}</td><td>${as.length}</td></tr>`}).join('');
+          return header+group.map(tree=>{const parentHtml=rowHtml(tree.parent,tree.project);const childHtml=(q||!taskParentCollapsed('manage',tree.parent.id))?tree.children.map(c=>rowHtml(c,tree.project)).join(''):'';return parentHtml+childHtml}).join('');
         }).join('');
         $('#taskGrid').innerHTML=`<div class="table-wrap"><table class="table task-management-table task-status-table ${allMode?'task-management-all':''}"><thead><tr>${projectHead}<th>Task</th><th>Status</th><th>Priority</th><th>Due Date</th><th>Phase</th><th>Trade</th><th>Level</th><th>Building</th><th>System</th><th>% Complete</th><th>Tracked Hours</th><th>Assignees</th><th>People</th></tr></thead><tbody>${groups||`<tr><td colspan="${colSpan}" class="muted">No tasks found.</td></tr>`}</tbody></table></div>`;
         $$('[data-task-row]').forEach(r=>{
@@ -1210,6 +1240,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
           r.ondblclick=()=>{const task=state.tasks.find(t=>t.id===r.dataset.taskRow);if(task)taskModal(task.project_id,task)};
         });
         hookTaskStatusGroups('manage',()=>drawTaskGrid(pid));
+        hookTaskParentToggles('manage',()=>drawTaskGrid(pid));
         $$('[data-add-task-status]').forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();if(!allMode&&pid)taskModal(pid,null,decodeURIComponent(b.dataset.addTaskStatus||''))});
       }
       function taskModal(pid,t=null,initialStatus='',parentTask=null){
@@ -1435,7 +1466,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
       }
       async function toggleEmployee(uid){if(!canManageEmployees())return alert('Only Director/System Admin can change employee status.');const p=prof(uid);if(!p)return;const active=p.active===false;if(!confirm(`${active?'Activate':'Deactivate'} ${nameOf(uid)}?`))return;const {error}=await sb.from('profiles').update({active}).eq('id',uid);if(error)return alert(error.message);await loadAll()}
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.63 Tasks + Subtasks parity</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.64 Nested collapsible Subtasks</p></div>`}
       
       async function bootstrapAuth(){
         try{
