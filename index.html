@@ -783,6 +783,7 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
 .task-history-group{margin:4px 0 10px}.task-history-toggle{min-height:32px;border:1px solid #e4e7ec;border-radius:8px;background:#f8fafc;color:#667085;padding:6px 10px;box-shadow:none}.task-history-toggle:hover{background:#f2f4f7;border-color:#d0d5dd}.task-history-group.is-open{border:1px solid #e4e7ec;border-radius:10px;background:#fff;overflow:hidden}.task-history-group.is-open .task-history-toggle{border:0;border-top:1px solid #eaecf0;border-radius:0}.task-history-group-body{background:#fff;padding:4px 4px 2px}.task-history-group .task-history-event{padding:8px 10px}
 .task-comment-delete{opacity:.72;border-radius:6px!important}.task-comment-delete:hover{opacity:1}.task-comment-attachments{gap:8px}.task-comment-attachment{border-radius:10px!important;border-color:#e4e7ec!important;background:#f9fafb!important}
 .task-comment-delete-audit{border:1px solid #fecaca;background:#fff8f8;border-radius:10px;padding:10px 12px;margin:2px 0 10px}.task-comment-delete-audit .task-detail-avatar{background:#fee2e2!important;color:#b42318!important}.task-comment-delete-audit .task-detail-feed-head b{color:#b42318}.task-comment-delete-audit-note{color:#475467;font-size:12px}.task-comment-delete-audit-time{color:#667085;font-size:11px;margin-top:3px}
+.task-delete-audit-group{width:100%;margin:4px 0 10px}.task-delete-audit-group-body{display:none;background:#fff;padding:6px}.task-delete-audit-group.is-open{border:1px solid #fecaca;border-radius:10px;overflow:hidden;background:#fff}.task-delete-audit-group.is-open .task-delete-audit-group-body{display:block}.task-delete-audit-group .task-comment-delete-audit{margin:0 0 6px}.task-delete-audit-group .task-comment-delete-audit:last-child{margin-bottom:0}.task-delete-audit-toggle{width:100%;min-height:32px;display:flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid #fecaca;border-radius:8px;background:#fff8f8;color:#b42318;font-size:12px;font-weight:600;text-align:left;cursor:pointer}.task-delete-audit-toggle:hover{background:#fff1f1}.task-delete-audit-group.is-open .task-delete-audit-toggle{border:0;border-top:1px solid #fecaca;border-radius:0}.task-delete-audit-toggle-icon{width:14px;min-width:14px;text-align:center;font-size:11px;line-height:1}.task-delete-audit-toggle-text{white-space:nowrap}
 .task-detail-composer{padding:12px 16px 14px;background:#fff;border-top:1px solid #e4e7ec;box-shadow:0 -8px 20px rgba(16,24,40,.025);position:relative}.task-detail-composer-toolbar{margin-bottom:2px}.task-detail-attach-btn{border-radius:7px!important;background:#f9fafb!important}.task-detail-composer textarea{min-height:76px!important;border:1px solid #d0d5dd!important;border-radius:10px!important;padding:10px 12px!important;background:#fff!important;box-shadow:0 1px 2px rgba(16,24,40,.03)}.task-pending-file{border-radius:8px!important;background:#f8fafc!important;border-color:#e4e7ec!important}
 .task-detail-close{width:32px!important;height:32px!important;border-radius:8px!important}.task-detail-save-btn,.task-detail-edit-btn{border-radius:8px!important;min-height:34px!important}
 
@@ -824,7 +825,7 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
 .task-priority.low{background:#2f6fed}.task-priority.normal{background:#667085}.task-priority.high{background:#f79009}.task-priority.critical{background:#d92d20}.task-priority.urgent{background:#c11574}
 #page-tasks .task-canonical-table tr.selected .task-priority{box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 0 0 1px rgba(255,255,255,.12)}
 
-/* Web 4.91 - threaded comment replies + compact actions */
+/* Web 4.92 - collapsible deleted-comment audit */
 .task-comment-mention{color:#2f5bea!important;background:transparent!important;padding:0!important;border-radius:0!important;font-weight:700!important}
 .task-comment-footer{display:flex;justify-content:flex-end;align-items:center;margin-top:5px;min-height:24px}
 .task-comment-reply{font-weight:600!important;color:#667085!important;padding:3px 7px!important}
@@ -851,7 +852,7 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
       <div class="brand-row"><img class="brand-badge" src="data:image/png;base64,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" alt="DDG"><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.91 · Threaded Replies & Mentions</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.92 · Collapsible Deleted Comment Audit</div>
     </div>
   </section>
 
@@ -1553,19 +1554,31 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
 
         const activityItems=[...commentItems,...historyItems,...deleteAuditItems].sort((a,b)=>a.when-b.when||a.order-b.order);
         state.taskDetailHistoryExpanded??={};
+        state.taskDetailDeleteAuditExpanded??={};
         const historyStateKey=i=>`${tid}|${i}`;
+        const deleteAuditStateKey=i=>`${tid}|deleted|${i}`;
 
         function buildTaskActivityTimeline(){
           if(!activityItems.length)return '<div class="task-detail-timeline-empty">No activity yet.</div>';
-          const output=[];let historyBuffer=[];let historyGroupIndex=0;
+          const output=[];let historyBuffer=[];let deleteAuditBuffer=[];let historyGroupIndex=0;let deleteAuditGroupIndex=0;
           const flushHistory=()=>{
             if(!historyBuffer.length)return;
             const groupIndex=historyGroupIndex++,key=historyStateKey(groupIndex),expanded=!!state.taskDetailHistoryExpanded[key],count=historyBuffer.length;
             output.push(`<div class="task-history-group${expanded?' is-open':''}" data-history-group="${groupIndex}"><div class="task-history-group-body">${historyBuffer.map(item=>item.html).join('')}</div><button type="button" class="task-history-toggle" data-history-toggle="${groupIndex}"><span class="task-history-toggle-icon">${expanded?'⌃':'⌄'}</span><span class="task-history-toggle-text">${expanded?'Hide':`Show ${count} change${count===1?'':'s'}`}</span></button></div>`);
             historyBuffer=[];
           };
-          for(const item of activityItems){if(item.kind==='history'){historyBuffer.push(item);continue}flushHistory();output.push(item.html)}
-          flushHistory();
+          const flushDeleteAudits=()=>{
+            if(!deleteAuditBuffer.length)return;
+            const groupIndex=deleteAuditGroupIndex++,key=deleteAuditStateKey(groupIndex),expanded=!!state.taskDetailDeleteAuditExpanded[key],count=deleteAuditBuffer.length;
+            output.push(`<div class="task-delete-audit-group${expanded?' is-open':''}" data-delete-audit-group="${groupIndex}"><div class="task-delete-audit-group-body">${deleteAuditBuffer.map(item=>item.html).join('')}</div><button type="button" class="task-delete-audit-toggle" data-delete-audit-toggle="${groupIndex}"><span class="task-delete-audit-toggle-icon">${expanded?'⌃':'⌄'}</span><span class="task-delete-audit-toggle-text">${expanded?'Hide deleted comments':`Show ${count} deleted comment${count===1?'':'s'}`}</span></button></div>`);
+            deleteAuditBuffer=[];
+          };
+          for(const item of activityItems){
+            if(item.kind==='history'){flushDeleteAudits();historyBuffer.push(item);continue}
+            if(item.kind==='audit'){flushHistory();deleteAuditBuffer.push(item);continue}
+            flushHistory();flushDeleteAudits();output.push(item.html);
+          }
+          flushHistory();flushDeleteAudits();
           return output.join('');
         }
 
@@ -1581,13 +1594,21 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
 
         function bindHistoryToggles(){
           const feed=$('#taskDetailTimeline');if(!feed)return;
+          const rerenderKeepingScroll=oldScroll=>{feed.innerHTML=buildTaskActivityTimeline();bindHistoryToggles();bindCommentActions();requestAnimationFrame(()=>{feed.scrollTop=oldScroll});};
           feed.querySelectorAll('[data-history-toggle]').forEach(button=>{
             button.onclick=e=>{
               e.preventDefault();e.stopPropagation();
               const groupIndex=Number(button.dataset.historyToggle),key=historyStateKey(groupIndex),oldScroll=feed.scrollTop;
               state.taskDetailHistoryExpanded[key]=!state.taskDetailHistoryExpanded[key];
-              feed.innerHTML=buildTaskActivityTimeline();bindHistoryToggles();bindCommentActions();
-              requestAnimationFrame(()=>{feed.scrollTop=oldScroll});
+              rerenderKeepingScroll(oldScroll);
+            };
+          });
+          feed.querySelectorAll('[data-delete-audit-toggle]').forEach(button=>{
+            button.onclick=e=>{
+              e.preventDefault();e.stopPropagation();
+              const groupIndex=Number(button.dataset.deleteAuditToggle),key=deleteAuditStateKey(groupIndex),oldScroll=feed.scrollTop;
+              state.taskDetailDeleteAuditExpanded[key]=!state.taskDetailDeleteAuditExpanded[key];
+              rerenderKeepingScroll(oldScroll);
             };
           });
         }
@@ -2053,7 +2074,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
       }
       async function toggleEmployee(uid){if(!canManageEmployees())return alert('Only Director/System Admin can change employee status.');const p=prof(uid);if(!p)return;const active=p.active===false;if(!confirm(`${active?'Activate':'Deactivate'} ${nameOf(uid)}?`))return;const {error}=await sb.from('profiles').update({active}).eq('id',uid);if(error)return alert(error.message);if(!active&&uid===state.profile?.id){await forceInactiveLogout();return}await loadAll()}
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.91 Threaded Replies / @ Mention</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.92 Collapsible Deleted Comment Audit</p></div>`}
       
       async function bootstrapAuth(){
         try{
