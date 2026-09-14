@@ -783,6 +783,7 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
 .task-history-group{margin:4px 0 10px}.task-history-toggle{min-height:32px;border:1px solid #e4e7ec;border-radius:8px;background:#f8fafc;color:#667085;padding:6px 10px;box-shadow:none}.task-history-toggle:hover{background:#f2f4f7;border-color:#d0d5dd}.task-history-group.is-open{border:1px solid #e4e7ec;border-radius:10px;background:#fff;overflow:hidden}.task-history-group.is-open .task-history-toggle{border:0;border-top:1px solid #eaecf0;border-radius:0}.task-history-group-body{background:#fff;padding:4px 4px 2px}.task-history-group .task-history-event{padding:8px 10px}
 .task-comment-delete{opacity:.72;border-radius:6px!important}.task-comment-delete:hover{opacity:1}.task-comment-attachments{gap:8px}.task-comment-attachment{border-radius:10px!important;border-color:#e4e7ec!important;background:#f9fafb!important}
 .task-comment-delete-audit{border:1px solid #fecaca;background:#fff8f8;border-radius:10px;padding:10px 12px;margin:2px 0 10px}.task-comment-delete-audit .task-detail-avatar{background:#fee2e2!important;color:#b42318!important}.task-comment-delete-audit .task-detail-feed-head b{color:#b42318}.task-comment-delete-audit-note{color:#475467;font-size:12px}.task-comment-delete-audit-time{color:#667085;font-size:11px;margin-top:3px}
+.task-comment-delete-audit-meta{display:flex;align-items:center;justify-content:flex-end;gap:8px;white-space:nowrap}.task-comment-audit-purge{border:1px solid #fecaca;background:#fff;color:#b42318;border-radius:7px;padding:4px 8px;font-size:10px;font-weight:700;cursor:pointer}.task-comment-audit-purge:hover{background:#fee2e2}.task-comment-audit-purge:disabled{opacity:.55;cursor:not-allowed}
 .task-delete-audit-group{width:100%;margin:4px 0 10px}.task-delete-audit-group-body{display:none;background:#fff;padding:6px}.task-delete-audit-group.is-open{border:1px solid #fecaca;border-radius:10px;overflow:hidden;background:#fff}.task-delete-audit-group.is-open .task-delete-audit-group-body{display:block}.task-delete-audit-group .task-comment-delete-audit{margin:0 0 6px}.task-delete-audit-group .task-comment-delete-audit:last-child{margin-bottom:0}.task-delete-audit-toggle{width:100%;min-height:32px;display:flex;align-items:center;gap:7px;padding:6px 10px;border:1px solid #fecaca;border-radius:8px;background:#fff8f8;color:#b42318;font-size:12px;font-weight:600;text-align:left;cursor:pointer}.task-delete-audit-toggle:hover{background:#fff1f1}.task-delete-audit-group.is-open .task-delete-audit-toggle{border:0;border-top:1px solid #fecaca;border-radius:0}.task-delete-audit-toggle-icon{width:14px;min-width:14px;text-align:center;font-size:11px;line-height:1}.task-delete-audit-toggle-text{white-space:nowrap}
 .task-detail-composer{padding:12px 16px 14px;background:#fff;border-top:1px solid #e4e7ec;box-shadow:0 -8px 20px rgba(16,24,40,.025);position:relative}.task-detail-composer-toolbar{margin-bottom:2px}.task-detail-attach-btn{border-radius:7px!important;background:#f9fafb!important}.task-detail-composer textarea{min-height:76px!important;border:1px solid #d0d5dd!important;border-radius:10px!important;padding:10px 12px!important;background:#fff!important;box-shadow:0 1px 2px rgba(16,24,40,.03)}.task-pending-file{border-radius:8px!important;background:#f8fafc!important;border-color:#e4e7ec!important}
 .task-detail-close{width:32px!important;height:32px!important;border-radius:8px!important}.task-detail-save-btn,.task-detail-edit-btn{border-radius:8px!important;min-height:34px!important}
@@ -825,12 +826,18 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
 .task-priority.low{background:#2f6fed}.task-priority.normal{background:#667085}.task-priority.high{background:#f79009}.task-priority.critical{background:#d92d20}.task-priority.urgent{background:#c11574}
 #page-tasks .task-canonical-table tr.selected .task-priority{box-shadow:inset 0 0 0 1px rgba(255,255,255,.45),0 0 0 1px rgba(255,255,255,.12)}
 
-/* Web 4.93 - mention selection + collapsible replies */
+/* Web 4.95 - System Admin permanent purge for deleted-comment audit rows */
 .task-comment-mention{color:#2f5bea!important;background:transparent!important;padding:0!important;border-radius:0!important;font-weight:700!important}
-.task-comment-footer{display:flex;justify-content:flex-end;align-items:center;margin-top:5px;min-height:24px}
-.task-comment-reply{font-weight:600!important;color:#667085!important;padding:3px 7px!important}
+/* Web 4.94 - compact reply thread controls; collapsed threads render no child DOM */
+.task-comment-footer{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:6px;min-height:0}
+.task-comment-reply{margin-left:auto;font-weight:600!important;color:#667085!important;padding:4px 8px!important;border-radius:7px!important}
 .task-comment-reply:hover{background:#f2f4f7!important;color:#101828!important}
-.task-comment-replies{margin:8px 0 0 14px;padding-left:12px;border-left:2px solid #eaecf0;display:flex;flex-direction:column;gap:8px}.task-comment-replies.is-collapsed{display:none}.task-comment-replies-toggle{border:0!important;background:transparent!important;color:#175cd3!important;padding:3px 7px!important;min-height:24px!important;font-size:11px!important;font-weight:700!important;border-radius:6px!important;cursor:pointer!important}.task-comment-replies-toggle:hover{background:#eff4ff!important;color:#1849a9!important}
+.task-comment-replies{margin:6px 0 0 14px;padding-left:12px;border-left:2px solid #eaecf0;display:flex;flex-direction:column;gap:8px}
+.task-comment-replies:empty{display:none!important;margin:0!important;padding:0!important;border:0!important}
+.task-comment-replies-toggle{display:inline-flex!important;align-items:center!important;gap:6px!important;border:1px solid transparent!important;background:transparent!important;color:#175cd3!important;padding:4px 8px!important;min-height:26px!important;font-size:11px!important;font-weight:700!important;border-radius:7px!important;cursor:pointer!important;line-height:1.15!important}
+.task-comment-replies-toggle:hover{background:#eff4ff!important;border-color:#d1e0ff!important;color:#1849a9!important}
+.task-comment-replies-toggle .reply-toggle-chevron{width:12px;display:inline-flex;align-items:center;justify-content:center;color:#667085;font-size:10px}
+.task-detail-comment-card{height:auto!important;min-height:0!important}
 .task-detail-comment-card.is-reply{margin:0;background:#f8fafc;border-color:#e4e7ec;padding:10px 11px}
 .task-detail-comment-card.is-reply .task-detail-comment-card.is-reply{background:#fff}
 .task-comment-more-wrap{position:relative;display:inline-flex;align-items:center}
@@ -852,7 +859,7 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
       <div class="brand-row"><img class="brand-badge" src="data:image/png;base64,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" alt="DDG"><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.93 · Mention & Reply Controls</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.95 · Admin Audit Purge</div>
     </div>
   </section>
 
@@ -1539,11 +1546,12 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
           const newHtml=commentWasUnread(c)?'<span class="task-comment-unread-chip">NEW</span>':'';
           const edited=new Date(c.updated_at||0).getTime()>new Date(c.created_at||0).getTime()+2000?'<span class="task-comment-edited">Edited</span>':'';
           const more=(canEditComment||canDelete)?`<div class="task-comment-more-wrap"><button type="button" class="task-comment-more" data-comment-more="${esc(id)}" aria-label="Comment actions">•••</button><div class="task-comment-menu" data-comment-menu="${esc(id)}">${canEditComment?`<button type="button" data-edit-comment="${esc(id)}">Edit</button>`:''}${canDelete?`<button type="button" class="danger" data-delete-comment="${esc(id)}">Delete</button>`:''}</div></div>`:'';
-          const children=(repliesByParent.get(id)||[]).map(child=>renderCommentCardHtml(child,depth+1,next)).join('');
-          const replyCount=children?descendantReplyCount(id):0;
+          const childComments=repliesByParent.get(id)||[];
+          const replyCount=childComments.length?descendantReplyCount(id):0;
           const repliesCollapsed=replyCount>0&&!!state.taskCommentRepliesCollapsed[replyCollapseKey(id)];
-          const repliesToggle=replyCount?`<button type="button" class="task-comment-action task-comment-replies-toggle" data-replies-toggle="${esc(id)}" data-reply-count="${replyCount}" aria-expanded="${repliesCollapsed?'false':'true'}">${repliesCollapsed?'▸ Show':'▾ Hide'} ${replyCount} repl${replyCount===1?'y':'ies'}</button>`:'';
-          const repliesHtml=children?`<div class="task-comment-replies${repliesCollapsed?' is-collapsed':''}" data-replies-for="${esc(id)}">${children}</div>`:'';
+          const children=replyCount&&!repliesCollapsed?childComments.map(child=>renderCommentCardHtml(child,depth+1,next)).join(''):'';
+          const repliesToggle=replyCount?`<button type="button" class="task-comment-action task-comment-replies-toggle" data-replies-toggle="${esc(id)}" data-reply-count="${replyCount}" aria-expanded="${repliesCollapsed?'false':'true'}"><span class="reply-toggle-chevron">${repliesCollapsed?'▸':'▾'}</span><span>${repliesCollapsed?'Show':'Hide'} ${replyCount} repl${replyCount===1?'y':'ies'}</span></button>`:'';
+          const repliesHtml=children?`<div class="task-comment-replies" data-replies-for="${esc(id)}">${children}</div>`:'';
           return `<div class="task-detail-comment-card${commentWasUnread(c)?' is-unread':''}${depth?' is-reply':''}" data-comment-card="${esc(id)}"><div class="task-detail-feed-item"><div class="task-detail-avatar">${taskFeedAvatar(nameOf(c.user_id))}</div><div class="task-detail-feed-main"><div class="task-detail-feed-head"><div class="task-comment-author-line"><b>${esc(nameOf(c.user_id))}</b>${newHtml}</div><div class="task-comment-meta"><span>${esc(new Date(c.created_at).toLocaleString())}${edited}</span>${more}</div></div>${body}${filesHtml}<div class="task-comment-footer">${repliesToggle}<button type="button" class="task-comment-action task-comment-reply" data-reply-comment="${esc(id)}" title="Reply">↩ Reply</button></div>${repliesHtml}</div></div></div>`;
         }
 
@@ -1558,7 +1566,8 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
           .map(h=>{
             const actor=h.actor_user_id?nameOf(h.actor_user_id):'System';
             const when=new Date(h.created_at||0);
-            return{kind:'audit',when:when.getTime(),order:1,html:`<div class="task-comment-delete-audit"><div class="task-detail-feed-item"><div class="task-detail-avatar">×</div><div class="task-detail-feed-main"><div class="task-detail-feed-head"><b>Comment deleted</b><span>${esc(when.toLocaleString())}</span></div><div class="task-comment-delete-audit-note">${esc(actor)} deleted a comment.</div><div class="task-comment-delete-audit-time">Deleted ${esc(when.toLocaleString())}</div></div></div></div>`};
+            const purgeAction=isSystemAdmin()?`<button type="button" class="task-comment-audit-purge" data-purge-delete-audit="${esc(String(h.id))}" title="Permanently delete this audit entry from the database">Delete permanently</button>`:'';
+            return{kind:'audit',when:when.getTime(),order:1,html:`<div class="task-comment-delete-audit"><div class="task-detail-feed-item"><div class="task-detail-avatar">×</div><div class="task-detail-feed-main"><div class="task-detail-feed-head"><b>Comment deleted</b><div class="task-comment-delete-audit-meta"><span>${esc(when.toLocaleString())}</span>${purgeAction}</div></div><div class="task-comment-delete-audit-note">${esc(actor)} deleted a comment.</div><div class="task-comment-delete-audit-time">Deleted ${esc(when.toLocaleString())}</div></div></div></div>`};
           });
 
         const activityItems=[...commentItems,...historyItems,...deleteAuditItems].sort((a,b)=>a.when-b.when||a.order-b.order);
@@ -1620,6 +1629,20 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
               rerenderKeepingScroll(oldScroll);
             };
           });
+          feed.querySelectorAll('[data-purge-delete-audit]').forEach(button=>{
+            button.onclick=async e=>{
+              e.preventDefault();e.stopPropagation();
+              if(!isSystemAdmin())return alert('Only System Admin can permanently delete comment-deletion audit history.');
+              const historyId=Number(button.dataset.purgeDeleteAudit||0);
+              if(!historyId)return alert('Deleted-comment history entry is invalid.');
+              if(!confirm('Permanently delete this \'Comment deleted\' audit entry from the database?\n\nThis cannot be undone and the deletion record will disappear from Activity.'))return;
+              button.disabled=true;
+              const {data,error}=await sb.rpc('purge_task_comment_delete_audit',{p_history_id:historyId});
+              if(error){button.disabled=false;return alert((error.message||String(error))+'\nRun TASK_COMMENT_DELETE_AUDIT_PURGE_V1.sql in Supabase once.')}
+              if(data!==true){button.disabled=false;return alert('This deleted-comment audit entry no longer exists or was already removed.')}
+              await taskActivityModal(tid,editing);
+            };
+          });
         }
 
         async function deleteTaskComment(commentId){
@@ -1668,13 +1691,17 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
           feed.querySelectorAll('[data-delete-comment]').forEach(button=>button.onclick=async e=>{e.preventDefault();e.stopPropagation();closeCommentMenus();await deleteTaskComment(button.dataset.deleteComment)});
           feed.querySelectorAll('[data-reply-comment]').forEach(button=>button.onclick=e=>{e.preventDefault();e.stopPropagation();closeCommentMenus();replyToComment(button.dataset.replyComment)});
           feed.querySelectorAll('[data-replies-toggle]').forEach(button=>button.onclick=e=>{
-            e.preventDefault();e.stopPropagation();
-            const id=String(button.dataset.repliesToggle||''),card=button.closest('[data-comment-card]');if(!id||!card)return;
-            const main=button.closest('.task-detail-feed-main');if(!main)return;
-            const box=[...main.children].find(x=>x.classList&&x.classList.contains('task-comment-replies'));if(!box)return;
-            const collapsed=!box.classList.contains('is-collapsed');box.classList.toggle('is-collapsed',collapsed);
-            state.taskCommentRepliesCollapsed[replyCollapseKey(id)]=collapsed;
-            const count=Number(button.dataset.replyCount||0);button.textContent=`${collapsed?'▸ Show':'▾ Hide'} ${count} repl${count===1?'y':'ies'}`;button.setAttribute('aria-expanded',collapsed?'false':'true');
+            e.preventDefault();e.stopPropagation();closeCommentMenus();
+            const id=String(button.dataset.repliesToggle||'');if(!id)return;
+            const key=replyCollapseKey(id),oldScroll=feed.scrollTop;
+            state.taskCommentRepliesCollapsed[key]=!state.taskCommentRepliesCollapsed[key];
+            /* Re-render the timeline instead of only hiding the child box.
+               This removes collapsed reply cards from the DOM entirely, so the parent
+               comment immediately shrinks with no leftover blank height. */
+            feed.innerHTML=buildTaskActivityTimeline();
+            bindHistoryToggles();
+            bindCommentActions();
+            requestAnimationFrame(()=>{feed.scrollTop=Math.min(oldScroll,Math.max(0,feed.scrollHeight-feed.clientHeight))});
           });
           feed.querySelectorAll('[data-edit-comment]').forEach(button=>button.onclick=e=>{e.preventDefault();e.stopPropagation();closeCommentMenus();setCommentEditMode(button.dataset.editComment)});
         }
@@ -2108,7 +2135,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
       }
       async function toggleEmployee(uid){if(!canManageEmployees())return alert('Only Director/System Admin can change employee status.');const p=prof(uid);if(!p)return;const active=p.active===false;if(!confirm(`${active?'Activate':'Deactivate'} ${nameOf(uid)}?`))return;const {error}=await sb.from('profiles').update({active}).eq('id',uid);if(error)return alert(error.message);if(!active&&uid===state.profile?.id){await forceInactiveLogout();return}await loadAll()}
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.93 Mention & Reply Controls</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.95 Admin Audit Purge</p></div>`}
       
       async function bootstrapAuth(){
         try{
