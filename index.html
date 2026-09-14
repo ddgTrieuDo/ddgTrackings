@@ -696,8 +696,11 @@ body.task-col-resizing{cursor:col-resize!important;user-select:none!important}
 .task-unread-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 6px;border-radius:999px;background:#d92d20;color:#fff;font-size:10px;font-weight:800;line-height:1}
 .nav-btn{position:relative}.nav-comment-badge{position:absolute;right:8px;top:7px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#d92d20;color:white;font-size:10px;font-weight:800;display:grid;place-items:center}
 .task-comments-link.has-unread{border-color:#fda29b!important;color:#b42318!important;background:#fff5f4!important}
-.task-comment-count{display:inline-flex;align-items:center;justify-content:center;min-width:28px;font-weight:700;color:#344054}
-.task-comment-count.has-unread{color:#b42318}
+.task-comment-cell{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:52px;white-space:nowrap}
+.task-comment-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;font-weight:700;color:#344054}
+.task-comment-new{display:inline-flex;align-items:center;justify-content:center;min-height:18px;padding:2px 6px;border-radius:999px;background:#d92d20;color:#fff;font-size:10px;font-weight:800;line-height:1}
+tr.selected .task-comment-count{color:#fff}
+tr.selected .task-comment-new{background:#fff;color:#b42318;box-shadow:0 0 0 1px rgba(255,255,255,.65)}
 @media(max-width:1120px){.task-detail-shell{grid-template-columns:minmax(450px,44%) 1fr}.task-detail-left{padding-left:28px;padding-right:28px}}
 @media(max-width:900px){.task-detail-shell{grid-template-columns:1fr;grid-template-rows:auto 1fr;overflow:auto}.task-detail-left{border-right:0;border-bottom:1px solid #e4e7ec;max-height:58vh}.task-detail-right{min-height:520px}.modal.task-detail-modal{overflow:auto!important}.task-detail-assignees{grid-template-columns:1fr}}
 
@@ -818,7 +821,7 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
       <div class="brand-row"><img class="brand-badge" src="data:image/png;base64,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" alt="DDG"><div><h1>Tracking</h1><p>DDG Management Web</p></div></div>
       <label>Email</label><input id="loginEmail" type="email" autocomplete="username" placeholder="name@company.com">
       <label>Password</label><input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password">
-      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.84 · Status Color Parity</div>
+      <button id="loginBtn" class="primary full">Login</button><div id="loginMsg" class="msg"></div><div class="login-version">Web 4.87 · Task NEW Comment Indicator</div>
     </div>
   </section>
 
@@ -908,6 +911,9 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
         throw new Error('Supabase library is not available.');
       }
       const sb=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:'ddg-tracking-web-auth'}});
+      const ACCOUNT_DEACTIVATED_MESSAGE='This account has been deactivated. Please contact an administrator.';
+      let accountActiveTimer=null;
+      let inactiveLogoutInProgress=false;
       
       
       const DEFAULT_PROJECT_PHASES = [
@@ -1078,8 +1084,60 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
 
       function modal(title,html,onSave,saveText='Save'){ $('#modal').innerHTML=`<h3>${esc(title)}</h3>${html}<div class="modal-actions"><button id="mCancel">Cancel</button>${onSave?`<button id="mSave" class="primary">${esc(saveText)}</button>`:''}</div>`;$('#modalBackdrop').classList.remove('hidden');$('#mCancel').onclick=closeModal;if(onSave)$('#mSave').onclick=onSave} function closeModal(){$('#modal').classList.remove('task-detail-modal');$('#modalBackdrop').classList.add('hidden')}
       
-      async function getProfile(user){const {data}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();return data||{id:user.id,email:user.email,display_name:user.email,role:'Employee'}}
-      async function showMain(user){state.profile=await getProfile(user);$('#loginView').classList.add('hidden');$('#mainView').classList.remove('hidden');$('#monitorNav').classList.toggle('hidden',!(roleIsManager()||roleIsProjectLead()));$('#employeesNav').classList.toggle('hidden',!canViewEmployees());const roleLabel=currentRole()+(isSystemAdmin()?' · System Admin':'');$('#userSummary').innerHTML=`<b>${esc(state.profile.display_name||state.profile.email)}</b><br>${esc(state.profile.employee_id||'')} · ${esc(roleLabel)}`;await loadAll()}
+      function inactiveAccountError(){const e=new Error(ACCOUNT_DEACTIVATED_MESSAGE);e.code='ACCOUNT_INACTIVE';return e}
+      function isInactiveAccountError(e){return e?.code==='ACCOUNT_INACTIVE'||String(e?.message||'')===ACCOUNT_DEACTIVATED_MESSAGE}
+      function friendlyAuthMessage(value){
+        const raw=String(value?.message||value||'Unable to sign in.').trim();
+        const lower=raw.toLowerCase();
+        if(lower.includes('invalid login credentials')||lower.includes('invalid credentials'))return'Email or password is incorrect.';
+        if(lower.includes('email not confirmed'))return'This email address has not been confirmed yet.';
+        return raw.replace(/^Supabase Auth:\s*/i,'').replace(/\s*\(HTTP\s*\d+\)\s*$/i,'');
+      }
+      function stopAccountActiveCheck(){if(accountActiveTimer){clearInterval(accountActiveTimer);accountActiveTimer=null}}
+      async function forceInactiveLogout(message=ACCOUNT_DEACTIVATED_MESSAGE){
+        if(inactiveLogoutInProgress)return;
+        inactiveLogoutInProgress=true;
+        stopAccountActiveCheck();
+        state.profile=null;
+        try{await sb.auth.signOut({scope:'local'})}catch(e){console.warn('Local sign-out after deactivate',e)}
+        $('#mainView')?.classList.add('hidden');
+        $('#loginView')?.classList.remove('hidden');
+        setMsg(message);
+        inactiveLogoutInProgress=false;
+      }
+      async function getProfile(user){
+        const {data,error}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+        if(error)throw error;
+        if(!data)throw new Error('This login does not have a DDG employee profile. Please contact an administrator.');
+        if(data.active===false)throw inactiveAccountError();
+        return data;
+      }
+      async function checkCurrentAccountActive(){
+        const uid=state.profile?.id;
+        if(!uid)return true;
+        try{
+          const {data,error}=await sb.from('profiles').select('id,active').eq('id',uid).maybeSingle();
+          if(error)throw error;
+          if(!data||data.active===false){await forceInactiveLogout();return false}
+          return true;
+        }catch(e){console.warn('Account active check',e);return true}
+      }
+      function scheduleAccountActiveCheck(){
+        stopAccountActiveCheck();
+        accountActiveTimer=setInterval(()=>{checkCurrentAccountActive().catch(e=>console.warn(e))},45000);
+      }
+      async function showMain(user){
+        const profile=await getProfile(user);
+        state.profile=profile;
+        $('#loginView').classList.add('hidden');
+        $('#mainView').classList.remove('hidden');
+        $('#monitorNav').classList.toggle('hidden',!(roleIsManager()||roleIsProjectLead()));
+        $('#employeesNav').classList.toggle('hidden',!canViewEmployees());
+        const roleLabel=currentRole()+(isSystemAdmin()?' · System Admin':'');
+        $('#userSummary').innerHTML=`<b>${esc(state.profile.display_name||state.profile.email)}</b><br>${esc(state.profile.employee_id||'')} · ${esc(roleLabel)}`;
+        scheduleAccountActiveCheck();
+        await loadAll();
+      }
       async function loginWithRestFallback(email,password){
         const ctrl=new AbortController();
         const timer=setTimeout(()=>ctrl.abort(),20000);
@@ -1099,7 +1157,7 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
           try{body=raw?JSON.parse(raw):{}}catch{body={message:raw}}
           if(!r.ok){
             const m=body?.msg||body?.message||body?.error_description||body?.error||`HTTP ${r.status}`;
-            throw new Error(`Supabase Auth: ${m} (HTTP ${r.status})`);
+            throw new Error(friendlyAuthMessage(m));
           }
           if(!body.access_token||!body.refresh_token) throw new Error('Supabase Auth returned no session token.');
           const {data,error}=await sb.auth.setSession({access_token:body.access_token,refresh_token:body.refresh_token});
@@ -1141,11 +1199,16 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
           await showMain(data.user);
         }catch(e){
           console.error('Login error',e);
-          msg.textContent=e?.name==='AbortError'?'Connection to Supabase timed out.':(e?.message||'Unable to connect to Supabase.');
+          if(isInactiveAccountError(e)){
+            await forceInactiveLogout();
+            msg.textContent=ACCOUNT_DEACTIVATED_MESSAGE;
+          }else{
+            msg.textContent=e?.name==='AbortError'?'Connection to Supabase timed out.':friendlyAuthMessage(e);
+          }
         }finally{btn.disabled=false;btn.textContent='Login';}
       };
       $('#loginPassword').addEventListener('keydown',e=>{if(e.key==='Enter')$('#loginBtn').click()});
-      $('#logoutBtn').onclick=async()=>{if(window._taskCommentNotifyTimer)clearTimeout(window._taskCommentNotifyTimer);await sb.auth.signOut();location.reload()};$('#reloadBtn').onclick=loadAll;
+      $('#logoutBtn').onclick=async()=>{stopAccountActiveCheck();if(window._taskCommentNotifyTimer)clearTimeout(window._taskCommentNotifyTimer);await sb.auth.signOut();location.reload()};$('#reloadBtn').onclick=loadAll;
       $$('.nav-btn[data-page]').forEach(b=>b.onclick=()=>{state.page=b.dataset.page;$$('.nav-btn[data-page]').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.add('hidden'));$(`#page-${state.page}`).classList.remove('hidden');render()});
       
       function render(){if(state.page!=='monitor'&&window._managerMonitorTimer){clearTimeout(window._managerMonitorTimer);window._managerMonitorTimer=null}const titles={dashboard:['Dashboard','Project portfolio overview'],jobs:['Jobs','Project setup, list, change orders and project time'],tasks:['Tasks','My work and task management'],production:['Production','Task production progress'],screenshots:['Screenshots','Cloud screenshots from Tracking desktop agent'],attendance:['Attendance','Live team, leave, schedules and leave balances'],monitor:['Team Monitor','Live work, staffing, deadlines, budget risks and employee screenshots'],employees:['Employees','Employee accounts, roles and leave balances'],settings:['Settings','Web portal preferences'],about:['About','DDG Tracking Web']};const t=titles[state.page]||['Tracking',''];$('#pageTitle').textContent=t[0];$('#pageSubtitle').textContent=t[1];document.body.classList.toggle('dashboard-mode',state.page==='dashboard');({dashboard:renderDashboard,jobs:renderJobs,tasks:renderTasks,production:renderProduction,screenshots:renderScreenshots,attendance:renderAttendance,monitor:renderMonitor,employees:renderEmployees,settings:renderSettings,about:renderAbout}[state.page]||(()=>{}))();hookProjectOpenLinks(document)}
@@ -1347,10 +1410,14 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
       function taskCreatorName(t){return t?.created_by?nameOf(t.created_by):'System'}
       function taskCommentCount(tid){return (state.taskCommentMeta||[]).filter(x=>x.task_id===tid).length}
       function taskCommentReadAt(tid){const row=(state.taskCommentReads||[]).find(x=>x.task_id===tid&&x.user_id===state.profile?.id);const t=row?.last_read_at?new Date(row.last_read_at).getTime():0;return Number.isFinite(t)?t:0}
-      function taskUnreadCommentCount(tid){if(!state.taskCommentNotificationsReady)return 0;const seen=taskCommentReadAt(tid),me=state.profile?.id;return (state.taskCommentMeta||[]).filter(x=>x.task_id===tid&&x.user_id!==me&&new Date(x.created_at||0).getTime()>seen).length}
+      function commentNotificationIsCompanyWide(){return isSystemAdmin()||roleIsManager()}
+      function commentNotificationTaskAllowed(tid){if(commentNotificationIsCompanyWide())return true;const me=state.profile?.id,t=tById(tid);if(!me||!tid)return false;const assigned=(state.assignees||[]).some(a=>a.task_id===tid&&a.user_id===me);const leadScope=!!t&&isLead(t.project_id);return assigned||leadScope}
+      function commentNotificationScopeLabel(){if(commentNotificationIsCompanyWide())return'';return state.projects.some(p=>isLead(p.id))?' from managed or assigned Tasks':' from assigned Tasks'}
+      function taskUnreadCommentCount(tid){if(!state.taskCommentNotificationsReady||!commentNotificationTaskAllowed(tid))return 0;const seen=taskCommentReadAt(tid),me=state.profile?.id;return (state.taskCommentMeta||[]).filter(x=>x.task_id===tid&&x.user_id!==me&&new Date(x.created_at||0).getTime()>seen).length}
       function totalUnreadTaskComments(){return [...new Set((state.taskCommentMeta||[]).map(x=>x.task_id).filter(Boolean))].reduce((n,tid)=>n+taskUnreadCommentCount(tid),0)}
-      function taskCommentButton(tid){const n=taskCommentCount(tid),u=taskUnreadCommentCount(tid);return `<span class="task-comment-count ${u?'has-unread':''}" title="${n} comment${n===1?'':'s'}">${n}</span>`}
-      function updateTaskCommentNotificationBadges(){const n=totalUnreadTaskComments();const nav=document.querySelector('.nav-btn[data-page="tasks"]');if(nav){let b=nav.querySelector('.nav-comment-badge');if(n){if(!b){b=document.createElement('span');b.className='nav-comment-badge';nav.appendChild(b)}b.textContent=n>99?'99+':String(n)}else b?.remove()}$$('[data-task-comments]').forEach(btn=>{const tid=btn.dataset.taskComments||'',count=taskCommentCount(tid),unread=taskUnreadCommentCount(tid);btn.classList.toggle('has-unread',unread>0);btn.textContent='Comments'+(count?` (${count})`:'')+(unread?` • NEW ${unread}`:'')});document.title=n?`(${n}) DDG Tracking`:'DDG Tracking'}
+      function taskCommentCellInner(tid){const n=taskCommentCount(tid),u=taskUnreadCommentCount(tid);return `<span class="task-comment-count">${n}</span>${u?`<span class="task-comment-new">NEW ${u}</span>`:''}`}
+      function taskCommentButton(tid){const n=taskCommentCount(tid),u=taskUnreadCommentCount(tid);return `<span class="task-comment-cell" data-task-comment-cell="${esc(tid)}" title="${n} comment${n===1?'':'s'}${u?` · ${u} new`:''}">${taskCommentCellInner(tid)}</span>`}
+      function updateTaskCommentNotificationBadges(){const n=totalUnreadTaskComments(),scope=commentNotificationScopeLabel();const nav=document.querySelector('.nav-btn[data-page="tasks"]');if(nav){nav.title=n?`Tasks · ${n} unread comment${n===1?'':'s'}${scope}`:'Tasks';let b=nav.querySelector('.nav-comment-badge');if(n){if(!b){b=document.createElement('span');b.className='nav-comment-badge';nav.appendChild(b)}b.textContent=n>99?'99+':String(n);b.title=`${n} unread comment${n===1?'':'s'}${scope}`}else b?.remove()}$$('[data-task-comment-cell]').forEach(cell=>{const tid=cell.dataset.taskCommentCell||'',count=taskCommentCount(tid),unread=taskUnreadCommentCount(tid);cell.innerHTML=taskCommentCellInner(tid);cell.title=`${count} comment${count===1?'':'s'}${unread?` · ${unread} new`:''}`});$$('[data-task-comments]').forEach(btn=>{const tid=btn.dataset.taskComments||'',count=taskCommentCount(tid),unread=taskUnreadCommentCount(tid);btn.classList.toggle('has-unread',unread>0);btn.textContent='Comments'+(count?` (${count})`:'')+(unread?` • NEW ${unread}`:'')});document.title=n?`(${n}) DDG Tracking`:'DDG Tracking'}
       async function markTaskCommentsRead(tid){if(!state.taskCommentNotificationsReady||!state.profile?.id||!tid)return;const now=new Date().toISOString();try{const {error}=await sb.from('task_comment_reads').upsert({task_id:tid,user_id:state.profile.id,last_read_at:now},{onConflict:'task_id,user_id'});if(error)throw error;const existing=(state.taskCommentReads||[]).find(x=>x.task_id===tid&&x.user_id===state.profile.id);if(existing)existing.last_read_at=now;else(state.taskCommentReads??=[]).push({task_id:tid,user_id:state.profile.id,last_read_at:now});updateTaskCommentNotificationBadges();$$('[data-task-comments]').filter(b=>b.dataset.taskComments===tid).forEach(b=>{const n=taskCommentCount(tid);b.classList.remove('has-unread');b.textContent='Comments'+(n?` (${n})`:'')})}catch(e){console.warn('task_comment_reads',e)}}
       async function refreshTaskCommentNotifications(){if(!state.profile?.id)return;try{const [cm,rr]=await Promise.all([safe('task_comments','id,task_id,user_id,created_at'),loadTaskCommentReads()]);state.taskCommentMeta=cm;state.taskCommentReads=rr;updateTaskCommentNotificationBadges()}catch(e){console.warn(e)}}
       function scheduleTaskCommentNotificationRefresh(){if(window._taskCommentNotifyTimer)clearTimeout(window._taskCommentNotifyTimer);if(!state.profile)return;window._taskCommentNotifyTimer=setTimeout(async()=>{await refreshTaskCommentNotifications();scheduleTaskCommentNotificationRefresh()},30000)}
@@ -1869,22 +1936,33 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
         });
         if(!p){const groupInput=$('#eGroup'),idInput=$('#eId');const updatePreview=()=>{idInput.value=nextEmployeeId(groupInput.value,previewProfiles)};groupInput.addEventListener('input',updatePreview);groupInput.addEventListener('change',updatePreview);updatePreview()}
       }
-      async function toggleEmployee(uid){if(!canManageEmployees())return alert('Only Director/System Admin can change employee status.');const p=prof(uid);if(!p)return;const active=p.active===false;if(!confirm(`${active?'Activate':'Deactivate'} ${nameOf(uid)}?`))return;const {error}=await sb.from('profiles').update({active}).eq('id',uid);if(error)return alert(error.message);await loadAll()}
+      async function toggleEmployee(uid){if(!canManageEmployees())return alert('Only Director/System Admin can change employee status.');const p=prof(uid);if(!p)return;const active=p.active===false;if(!confirm(`${active?'Activate':'Deactivate'} ${nameOf(uid)}?`))return;const {error}=await sb.from('profiles').update({active}).eq('id',uid);if(error)return alert(error.message);if(!active&&uid===state.profile?.id){await forceInactiveLogout();return}await loadAll()}
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.84 Status Color Parity</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 4.87 Task NEW Comment Indicator</p></div>`}
       
       async function bootstrapAuth(){
         try{
           const {data,error}=await sb.auth.getSession();
           if(error) console.warn('Session restore error',error);
-          if(data?.session?.user) await showMain(data.session.user);
+          if(data?.session?.user){
+            try{await showMain(data.session.user)}
+            catch(e){
+              console.error('Session profile validation error',e);
+              if(isInactiveAccountError(e))await forceInactiveLogout();
+              else{try{await sb.auth.signOut({scope:'local'})}catch{};setMsg(friendlyAuthMessage(e))}
+            }
+          }
         }catch(e){console.error('Auth bootstrap error',e);}
       }
       sb.auth.onAuthStateChange((event,session)=>{
         console.log('Auth state:',event);
         if(event==='SIGNED_OUT'){
+          stopAccountActiveCheck();
+          state.profile=null;
           $('#mainView')?.classList.add('hidden');
           $('#loginView')?.classList.remove('hidden');
+        }else if(event==='TOKEN_REFRESHED'&&session?.user&&state.profile?.id){
+          setTimeout(()=>checkCurrentAccountActive().catch(e=>console.warn(e)),0);
         }
       });
       bootstrapAuth();
