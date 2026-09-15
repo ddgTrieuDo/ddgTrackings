@@ -1568,7 +1568,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
           return `<div class="task-detail-comment-card${commentWasUnread(c)?' is-unread':''}${depth?' is-reply':''}" data-comment-card="${esc(id)}"><div class="task-detail-feed-item"><div class="task-detail-avatar">${taskFeedAvatar(nameOf(c.user_id))}</div><div class="task-detail-feed-main"><div class="task-detail-feed-head"><div class="task-comment-author-line"><b>${esc(nameOf(c.user_id))}</b>${newHtml}</div><div class="task-comment-meta"><span>${esc(new Date(c.created_at).toLocaleString())}${edited}</span>${more}</div></div>${body}${filesHtml}<div class="task-comment-footer">${repliesToggle}<button type="button" class="task-comment-action task-comment-reply" data-reply-comment="${esc(id)}" title="Reply">↩ Reply</button></div>${repliesHtml}</div></div></div>`;
         }
 
-        const commentItems=rootComments.map(c=>({kind:'comment',when:new Date(c.created_at||0).getTime(),order:1,html:renderCommentCardHtml(c)}));
+        const commentItems=rootComments.map(c=>({kind:'comment',when:new Date(c.created_at||0).getTime(),order:1,comment:c}));
 
         const historyItems=history
           .filter(h=>!String(h.action_type||'').startsWith('comment_'))
@@ -1607,7 +1607,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
           for(const item of activityItems){
             if(item.kind==='history'){flushDeleteAudits();historyBuffer.push(item);continue}
             if(item.kind==='audit'){flushHistory();deleteAuditBuffer.push(item);continue}
-            flushHistory();flushDeleteAudits();output.push(item.html);
+            flushHistory();flushDeleteAudits();output.push(item.kind==='comment'?renderCommentCardHtml(item.comment):item.html);
           }
           flushHistory();flushDeleteAudits();
           return output.join('');
