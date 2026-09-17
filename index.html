@@ -893,14 +893,18 @@ button:not(:disabled):active{transform:translateY(1px);box-shadow:none}.primary{
 .shot-software-row b{font-size:11px}
 @media(max-width:1100px){.shot-browser.detail-open{grid-template-columns:1fr}.shot-browser-side{position:static}}
 
-/* Web 5.09 - dashboard table consistency + compact content height */
+/* Web 5.10 - equal-height dashboard bottom panels + tighter table rows */
 #page-dashboard .dash-table-wrap,#page-dashboard .dash-chart{border-radius:0!important;box-shadow:none!important;border-color:#8f99a6!important}
-#page-dashboard .dashboard-bottom-row{align-items:start!important}
-#page-dashboard .dashboard-block.small .dash-table-wrap,#page-dashboard .dashboard-block.small .dash-chart{min-height:0!important;height:auto!important}
-#page-dashboard .dash-table th,#page-dashboard .dash-table td{height:auto!important;min-height:0!important;padding:6px 8px!important;line-height:1.25!important}
-#page-dashboard .dash-chart{min-height:0!important;padding:9px 11px!important}
-#page-dashboard .dash-chart-legend{margin-bottom:8px!important}
-#page-dashboard .dash-chart-row{margin:9px 0!important}
+#page-dashboard .dashboard-bottom-row{align-items:stretch!important}
+#page-dashboard .dashboard-bottom-row>.dashboard-block.small{display:flex!important;flex-direction:column!important;height:100%!important;min-height:0!important}
+#page-dashboard .dashboard-block.small .dash-table-wrap,#page-dashboard .dashboard-block.small .dash-chart{flex:1 1 auto!important;min-height:0!important;height:100%!important}
+#page-dashboard .dash-table th{height:auto!important;min-height:0!important;padding:4px 7px!important;line-height:1.12!important;vertical-align:middle!important}
+#page-dashboard .dash-table td{height:auto!important;min-height:0!important;padding:3px 7px!important;line-height:1.12!important;vertical-align:middle!important}
+#page-dashboard .dash-small-table th{padding-top:3px!important;padding-bottom:3px!important}
+#page-dashboard .dash-small-table td{padding-top:2px!important;padding-bottom:2px!important}
+#page-dashboard .dash-chart{padding:7px 10px!important}
+#page-dashboard .dash-chart-legend{margin-bottom:5px!important}
+#page-dashboard .dash-chart-row{margin:6px 0!important}
 </style>
 </head>
 <body>
@@ -2272,7 +2276,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
       }
       async function toggleEmployee(uid){if(!canManageEmployees())return alert('Only Director/System Admin can change employee status.');const p=prof(uid);if(!p)return;const active=p.active===false;if(!confirm(`${active?'Activate':'Deactivate'} ${nameOf(uid)}?`))return;const {error}=await sb.from('profiles').update({active}).eq('id',uid);if(error)return alert(error.message);if(!active&&uid===state.profile?.id){await forceInactiveLogout();return}await loadAll()}
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 5.09 Dashboard Consistency</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> personal Start/Stop tracking for Manager, Project Lead and Employee, plus role-scoped project/task workflows.</p><p class="muted">Version Web 5.10 Dashboard Compact Rows</p></div>`}
       
       async function bootstrapAuth(){
         try{
