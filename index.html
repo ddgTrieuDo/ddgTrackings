@@ -2187,14 +2187,16 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
         return {id,row:await waitWindowsCommandResult(id,20000)};
       }
       async function lockWindowsDevice(device){
-        if(!confirm(`Lock the WINDOWS session on ${device.device_name} for ${windowsDisplayUser(device)}?\nLogin account: ${windowsLoginUser(device)||'—'}\n\nDDG Tracking will continue running in the background.`))return;
         try{
-          setSync('Locking Windows...');
-          const {row}=await runWindowsCommandAndWait(device,'lock_windows');
-          if(!row)return alert(`Lock request was sent to ${device.device_name}, but the PC did not confirm within 20 seconds.\n\nConfirm App v186 is running and Online on that PC.`);
-          if(String(row.status).toLowerCase()==='completed')alert(row.result||`Windows session locked successfully on ${device.device_name}.`);
-          else alert(`Windows lock failed on ${device.device_name}.\n\n${row.result||'No error detail was returned.'}`);
-        }catch(e){alert(e.message||String(e))}finally{setSync('Supabase ✓')}
+          // One-click lock: no confirmation dialog and no wait-for-result dialog.
+          setSync(`Locking ${device.device_name}...`);
+          await queueWindowsCommand(device,'lock_windows');
+          setSync(`Lock sent to ${device.device_name}`);
+          setTimeout(()=>setSync('Supabase ✓'),1200);
+        }catch(e){
+          setSync('Supabase ✓');
+          alert(`Could not send Windows lock command to ${device.device_name}.\n\n${e?.message||String(e)}`);
+        }
       }
       async function logoffWindowsDevice(device){
         if(!confirm(`LOG OFF Windows user ${windowsDisplayUser(device)} on ${device.device_name}?\nLogin account: ${windowsLoginUser(device)||'—'}\n\nUnsaved Windows work can be lost. This does not deactivate the DDG Tracking account.`))return;
@@ -2425,7 +2427,7 @@ This action cannot be undone.`))return;const {error}=await sb.from('change_order
       }
       async function toggleEmployee(uid){if(!canManageEmployees())return alert('Only Director/System Admin can change employee status.');const p=prof(uid);if(!p)return;const active=p.active===false;if(!confirm(`${active?'Activate':'Deactivate'} ${nameOf(uid)}?`))return;const {error}=await sb.from('profiles').update({active}).eq('id',uid);if(error)return alert(error.message);if(!active&&uid===state.profile?.id){await forceInactiveLogout();return}await loadAll()}
       function renderSettings(){$('#page-settings').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">Web Portal Settings</div><div class="notice">Tracking capture settings remain in the Windows desktop agent because a browser cannot monitor global keyboard/mouse activity, detect all desktop applications, or capture the entire desktop in the background.</div><div class="form-grid"><div class="field"><label>Supabase</label><input readonly value="Connected"></div><div class="field"><label>Portal</label><input readonly value="DDG Tracking Web"></div><div class="field"><label>Signed screenshot URL lifetime</label><input readonly value="10 minutes"></div></div></div>`}
-      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> automatic Windows-start No Task tracking, Windows-user/session reporting, remote Windows session commands, screenshots and role-scoped project/task workflows.</p><p class="muted">Version Web 5.14 Windows User Display Fix</p></div>`}
+      function renderAbout(){$('#page-about').innerHTML=`<div class="card" style="max-width:900px"><div class="section-title">DDG Tracking Web</div><p>Management portal synchronized with the DDG Tracking Windows App through Supabase.</p><p><b>Organization roles:</b> Director, Manager, Project Lead and Employee. System Admin is a separate technical permission.</p><p><b>Web:</b> executive/management dashboards, Action Center, Project/Task/Change Order management, Operations Monitor, attendance/leave and employee administration by permission.</p><p><b>Windows App:</b> automatic Windows-start No Task tracking, Windows-user/session reporting, remote Windows session commands, screenshots and role-scoped project/task workflows.</p><p class="muted">Version Web 5.15 One-click Windows Lock</p></div>`}
       
       async function bootstrapAuth(){
         try{
